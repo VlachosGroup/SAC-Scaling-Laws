@@ -13,11 +13,13 @@ import numpy as np
 import json
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib
+from scipy.stats import norm
+
 #matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt 
-plt.switch_backend('agg')
-font = {'family' : 'normal', 'size'   : 12}
-matplotlib.rc('font', **font)
+#plt.switch_backend('agg')
+#font = {'family' : 'normal', 'size'   : 12}
+#matplotlib.rc('font', **font)
 
 
 #%% User define functions 
@@ -234,7 +236,7 @@ def plot_performance(X, y, model, model_name, output_dir = os.getcwd()):
     fig.savefig(os.path.join(output_dir, model_name + '_error_atom.png'))
     #plt.show()
 
-def cal_performance(X, y, model, model_name): 
+def cal_performance(X, y, model): 
     
     y_predict_all = model.predict(X)
     RMSE = np.sqrt(mean_squared_error(y, y_predict_all))
@@ -242,4 +244,66 @@ def cal_performance(X, y, model, model_name):
     
     return RMSE, r2
     
+def parity_plot(yobj, ypred, model_name, output_dir):
+    '''
+    Plot the parity plot of y vs ypred
+    return R2 score and MSE for the model
+    colorcode different site types
+    '''
+    RMSE = np.sqrt(np.mean((yobj - ypred)**2))
+    r2 = r2_score(yobj, ypred)
+    fig, ax = plt.subplots()
+
+    ax.scatter(yobj,
+                ypred,
+                alpha = 0.5,
+                s  = 60)
+    ax.plot([yobj.min(), yobj.max()], [yobj.min(), yobj.max()], 'k--', lw=2)
+    
+#    X_cluster = np.transpose(np.vstack((yobj, ypred)))
+#    gmm = GaussianMixture(n_components= 1, random_state = 0)
+#    plot_gmm(gmm, X_cluster)
+#    
+#    kmeans = KMeans(n_clusters = 1, random_state=0)
+#    plot_kmeans(kmeans, X_cluster)
+
+
+    ax.set_xlabel('DFT-Calculated ')
+    ax.set_ylabel('Model Prediction')
+    plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
+    plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
+    plt.tight_layout()
+    fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
+    
+    return RMSE, r2    
+
+def error_distribution(yobj, ypred, model_name, output_dir):
+    
+    '''
+    Plot the error distribution
+    return the standard deviation of the error distribution
+    '''
+    fig, ax = plt.subplots(figsize=(6,4))
+    ax.hist(yobj - ypred,density=1, alpha=0.5, color='steelblue')
+    mu = 0
+    sigma = np.std(yobj - ypred)
+    x_resid = np.linspace(mu - 3*sigma, mu + 3*sigma, 100)
+    ax.plot(x_resid,norm.pdf(x_resid, mu, sigma), color='r')
+    plt.title(r'{}, $\sigma$-{:.2}'.format(model_name, sigma))
+    fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
+
+    return sigma
+
+def plot_coef(coefs, terms, model_name,  output_dir):
+    
+    xi = np.arange(len(coefs))
+    fig, ax = plt.subplots(figsize=(6,4))
+    plt.bar(xi, coefs)
+    linex = np.arange(xi.min()-1, xi.max()+2)
+    plt.plot(linex, linex*0, c = 'k')
+    plt.xticks(xi, terms, rotation=45, fontsize = 8 )
+    plt.ylabel("Regression Coefficient Value (eV)")
+    plt.xlabel("Regression Coefficient")  
+    plt.tight_layout()
+    fig.savefig(os.path.join(output_dir, model_name + '_coef_distribution.png'))
     
