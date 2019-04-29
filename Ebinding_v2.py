@@ -334,19 +334,20 @@ def parity_plot_st(yobj,ypred, model_name, out_dir):
     '''
     RMSE = np.sqrt(np.mean((yobj - ypred)**2))
     r2 = r2_score(yobj, ypred)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 6))
     for metal_type, col in zip(metal_types, cm):
         indices = np.where(np.array(metal) == metal_type)[0]
         ax.scatter(yobj[indices],
                     ypred[indices],
                     label=metal_type,
                     facecolor = col, 
-                    alpha = 0.5,
+                    alpha = 0.8,
                     s  = 60)
-    ax.plot([yobj.min(), yobj.max()], [yobj.min(), yobj.max()], 'k--', lw=2)
-    ax.set_xlabel('DFT-Calculated ')
-    ax.set_ylabel('Model Prediction')
-    plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
+    ax.plot([yobj.min(), yobj.max()], [yobj.min(), yobj.max()], 'k--',  lw=2)
+    ax.set_xlabel('DFT-Calculated (eV) ')
+    ax.set_ylabel('Model Prediction (eV)')
+    #plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
+    plt.text(5,6.5, '$R^2$ = 0.956')
     plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
     fig.savefig(os.path.join(output_dir, model_name + '_parity_st.png'))
 

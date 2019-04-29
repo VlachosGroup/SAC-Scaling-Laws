@@ -79,7 +79,7 @@ def plot_coef_path(alpha, alphas, coef_path, model_name, output_dir = os.getcwd(
     '''
 
 
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(8, 6))
     
     plt.plot(-np.log10(alphas), coef_path, ':', linewidth= 0.8)
     plt.plot(-np.log10(alphas), np.mean(coef_path, axis = 1), 
@@ -103,7 +103,7 @@ def plot_RMSE_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd(
     #plot alphas vs RMSE along the path
     '''
 
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(8, 6))
     
     plt.plot(-np.log10(alphas), RMSE_path, ':', linewidth= 0.8)
     plt.plot(-np.log10(alphas), np.mean(RMSE_path, axis = 1), 
@@ -137,7 +137,7 @@ def plot_path(X, y, alpha, alphas, RMSE_path, coef_path, model, model_name, outp
 
 def plot_ridge_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd()):
     
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(8, 6))
     
     #plt.plot(-np.log10(alphas), np.log10(RMSE_path), ':', linewidth= 0.8)
     plt.plot(-np.log10(alphas), np.mean(RMSE_path, axis = 1), 
@@ -162,7 +162,7 @@ def plot_performance(X, y, model, model_name, output_dir = os.getcwd()):
     y_predict_all = model.predict(X)
     #y_predict_all = predict_y(pi_nonzero, intercept, J_nonzero)
     
-    plt.figure(figsize=(6,4))
+    plt.figure(figsize=(8,6))
     
     fig, ax = plt.subplots()
     ax.scatter(y, y_predict_all, s=60, facecolors='none', edgecolors='r')
@@ -188,7 +188,7 @@ def plot_performance(X, y, model, model_name, output_dir = os.getcwd()):
     #plot error plot
     '''
 
-    plt.figure(figsize=(6,4))
+    plt.figure(figsize=(8,6))
     
     fig, ax = plt.subplots()
     ax.scatter(y,y_predict_all - y, s = 20, color ='r')
@@ -214,7 +214,7 @@ def plot_performance(X, y, model, model_name, output_dir = os.getcwd()):
     #plot error plot per atom
     '''
 
-    plt.figure(figsize=(6,4))
+    plt.figure(figsize=(8,6))
     
     fig, ax = plt.subplots()
     ax.scatter(y, (y_predict_all - y), s=20, color = 'r')
@@ -252,7 +252,7 @@ def parity_plot(yobj, ypred, model_name, output_dir):
     '''
     RMSE = np.sqrt(np.mean((yobj - ypred)**2))
     r2 = r2_score(yobj, ypred)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8, 6))
 
     ax.scatter(yobj,
                 ypred,
@@ -283,7 +283,7 @@ def error_distribution(yobj, ypred, model_name, output_dir):
     Plot the error distribution
     return the standard deviation of the error distribution
     '''
-    fig, ax = plt.subplots(figsize=(6,4))
+    fig, ax = plt.subplots(figsize=(8,6))
     ax.hist(yobj - ypred,density=1, alpha=0.5, color='steelblue')
     mu = 0
     sigma = np.std(yobj - ypred)
@@ -296,12 +296,12 @@ def error_distribution(yobj, ypred, model_name, output_dir):
 
 def plot_coef(coefs, terms, model_name,  output_dir):
     
-    xi = np.arange(len(coefs))
-    fig, ax = plt.subplots(figsize=(6,4))
+    xi = np.arange(len(coefs))*2
+    fig, ax = plt.subplots(figsize=(8,6))
     plt.bar(xi, coefs)
     linex = np.arange(xi.min()-1, xi.max()+2)
     plt.plot(linex, linex*0, c = 'k')
-    plt.xticks(xi, terms, rotation=45, fontsize = 8 )
+    plt.xticks(xi, terms, rotation=0)
     plt.ylabel("Regression Coefficient Value (eV)")
     plt.xlabel("Regression Coefficient")  
     plt.tight_layout()

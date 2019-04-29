@@ -36,7 +36,7 @@ matplotlib.rcParams['ytick.major.width'] = 2
 '''
 read adsoprtion energy and barder charge from a csv file
 '''
-data = pd.read_csv('pca_data.csv', header = 0)
+data = pd.read_csv('Ea_data.csv', header = 0)
 
 metal = np.array(data['Metal'])
 Ebulk = np.array(data['Ebulk'])

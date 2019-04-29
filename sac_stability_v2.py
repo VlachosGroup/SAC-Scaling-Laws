@@ -32,14 +32,14 @@ import matplotlib
 
 
 
-font = {'size'   : 14}
+font = {'size'   : 16}
 
 matplotlib.rc('font', **font)
 matplotlib.rcParams['axes.linewidth'] = 1.5
-matplotlib.rcParams['xtick.major.size'] = 12
-matplotlib.rcParams['xtick.major.width'] = 2
-matplotlib.rcParams['ytick.major.size'] = 12
-matplotlib.rcParams['ytick.major.width'] = 2
+matplotlib.rcParams['xtick.major.size'] = 16
+matplotlib.rcParams['xtick.major.width'] = 3
+matplotlib.rcParams['ytick.major.size'] = 16
+matplotlib.rcParams['ytick.major.width'] = 3
 
 
 '''
@@ -64,7 +64,7 @@ X_poly_unrepeated = X_poly[:, np.array(pi_unrepeated)]
 X = X_poly_unrepeated
 y = Ea
 fit_int_flag = False # Not fitting for intercept, as the first coefficient is the intercept
-terms = ['Intercept', '$E_c$', '$E_{bind}$', '$E_{bind}/E_c$', '$E_c/E_{bind}$', '$E_c^2$', '$E_c*E_{bind}$', '$E_c^2/E_{bind}$', '$E_{bind}^2$', '$E_{bind}^2/E_c$', '$E_{bind}^2/E_c^2$', '$E_c^2/E_{bind}^2$']
+terms = ['$b_0$', '$E_c$', '$E_{bind}$', r'$\frac{E_{bind}}{E_c}$', r'$\frac{E_c}{E_{bind}}$', r'$E_c^2$', '$E_cE_{bind}$', r'$\frac{E_c^2}{E_{bind}}$', '$E_{bind}^2$', r'$\frac{E_{bind}^2}{E_c}$', r'$\frac{E_{bind}^2}{E_c^2}$', r'$\frac{E_c^2}{E_{bind}^2}$']
 
 #%% Preparation before regression
 # Train test split, save 10% of data point to the test set
@@ -236,7 +236,7 @@ fdata = pd.DataFrame(np.transpose([l1_ratio_v, enet_n_v, enet_RMSE_test_v]), col
 fdata.to_csv(os.path.join(output_dir, 'enet_data.csv'), index=False, index_label=False)
 
 #%% Plot elastic net results
-plt.figure(figsize=(6,4))
+plt.figure(figsize=(8,6))
 fig, ax1 = plt.subplots()
 ax1.plot(l1_ratio_v, enet_RMSE_test_v, 'bo-')
 ax1.set_xlabel('L1 Ratio')
@@ -300,24 +300,26 @@ PLS_RMSE, PLS_r2 = rtools.cal_performance(X, y, PLS)
 
 #%%
 '''
-First order regression
+Second order regression
 '''
-model_name = 'LM1'
+model_name = 'P2'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-LM1 = linear_model.LinearRegression(fit_intercept=fit_int_flag)
-LM1.fit(X_train,y_train) 
+P2 = linear_model.LinearRegression(fit_intercept=fit_int_flag)
+P2.fit(X_train,y_train) 
 
 # Access the errors 
-y_predict_test = LM1.predict(X_test)
-y_predict_train = LM1.predict(X_train)
+y_predict_test = P2.predict(X_test)
+y_predict_train = P2.predict(X_train)
 
-LM1_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
-LM1_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+P2_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+P2_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 
-LM1_RMSE, LM1_r2 = rtools.parity_plot(y, LM1.predict(X), model_name, output_dir)
-rtools.plot_coef(LM1.coef_, terms, model_name, output_dir)
+P2_RMSE, P2_r2 = rtools.parity_plot(y, P2.predict(X), model_name, output_dir)
+rtools.plot_coef(P2.coef_, terms, model_name, output_dir)
+
+
 
 #%%
 '''
@@ -356,47 +358,50 @@ Compare enet 05 and USR
 
 
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(8, 6))
 
-ax.scatter(y, enet05.predict(X), label='Elastic Net', facecolors='r', alpha = 0.5, s  = 60)
-ax.scatter(y, USR(X_USR), label='Universal Scaling', facecolors='b', marker="o", alpha = 0.5, s  = 60)
+ax.scatter(y, enet05.predict(X), label='Elastic Net ($R^2$ = 0.965)', facecolors='r', alpha = 0.7, s  = 60)
+ax.scatter(y, USR(X_USR), label='Universal Scaling ($R^2$ = 0.966)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xlabel('DFT-Calculated (eV)')
 ax.set_ylabel('Model Prediction (eV)')
 #plt.title(r'Method-{}, MSE-{:.2}, $r^2$ -{:.2}'.format(method, MSE, score))
-plt.legend(loc= 'lower right', frameon=False)
+plt.legend(loc= 'upper left', frameon=False)
 plt.show()
 
 '''
 Compare different regression method
 '''
 
-regression_method = [ 'USR', 'Elastic Net', 'LASSO', 'Ridge', '2nd Order Polynomial']
+regression_method = [ 'USM', 'Elastic Net', 'LASSO', 'Ridge', 'OLS']
 
-means_test = np.array([ USR_RMSE_test, enet05_RMSE_test, lasso_RMSE_test, ridge_RMSE_test, LM1_RMSE_test])
+means_test = np.array([ USR_RMSE_test, enet05_RMSE_test, lasso_RMSE_test, ridge_RMSE_test, P2_RMSE_test])
 
-r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, LM1_r2])
+r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, P2_r2])
 
 base_line = 0
 x_pos = np.arange(len(regression_method))
-opacity = 0.9
+opacity = 0.8
 bar_width = 0.25
 fig, ax1 = plt.subplots(figsize=(8,6))
-
-rects2 = plt.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
-                alpha = opacity, color='salmon',
+ax2 = ax1.twinx()
+rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
+                alpha = opacity, color='r',
                 label='Test')
-rects3 = plt.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,  
-                alpha = opacity, color='lightgreen',
+rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,  
+                alpha = opacity, color='b',
                 label='r2')
 #plt.ylim([-1,18])
+ax1.set_xticks(x_pos+bar_width/2)
+ax1.set_xticklabels(regression_method, rotation=20)
+ax1.set_xlabel('Model Name')
+#plt.legend(loc= 'best', frameon=False)
 
-plt.xticks(x_pos+bar_width/2, regression_method, rotation=40)
-plt.xlabel('Regression Method')
-plt.ylim([0,1])
-plt.legend(loc= 'best', frameon=False)
+ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
+ax1.set_ylim([0, 0.3])
+ax1.tick_params('y', colors='r')
 
-ax1.set_ylabel('CV RMSE (eV)')
-ax2 = ax1.twinx()
-ax2.set_ylabel('r2')
+ax2.set_ylabel('$R^2$',color = 'b')
+ax2.set_ylim([0.90, 1])
+ax2.tick_params('y', colors='b')
 
