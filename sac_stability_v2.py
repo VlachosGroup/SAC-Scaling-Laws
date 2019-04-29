@@ -146,6 +146,7 @@ ridgeCV = RidgeCV(alphas = alphas_grid_ridge,  cv = rkf, fit_intercept=fit_int_f
 ridgeCV.fit(X_train, y_train)
 ridge_alpha = ridgeCV.alpha_ 
 ridge_intercept = ridgeCV.intercept_ 
+ridge_coefs = ridgeCV.coef_
 
 # Access the errors 
 y_predict_test = ridgeCV.predict(X_test)
@@ -302,23 +303,23 @@ PLS_RMSE, PLS_r2 = rtools.cal_performance(X, y, PLS)
 '''
 Second order regression
 '''
-model_name = 'P2'
+model_name = 'OLS'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-P2 = linear_model.LinearRegression(fit_intercept=fit_int_flag)
-P2.fit(X_train,y_train) 
+OLS = linear_model.LinearRegression(fit_intercept=fit_int_flag)
+OLS.fit(X_train,y_train) 
+OLS_coefs = OLS.coef_
 
 # Access the errors 
-y_predict_test = P2.predict(X_test)
-y_predict_train = P2.predict(X_train)
+y_predict_test = OLS.predict(X_test)
+y_predict_train = OLS.predict(X_train)
 
-P2_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
-P2_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 
-P2_RMSE, P2_r2 = rtools.parity_plot(y, P2.predict(X), model_name, output_dir)
-rtools.plot_coef(P2.coef_, terms, model_name, output_dir)
-
+OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir)
+rtools.plot_coef(OLS.coef_, terms, model_name, output_dir)
 
 
 #%%
@@ -336,6 +337,11 @@ def USR(X_init):
     
     return Ea
 
+USR_coefs = np.zeros(12)
+USR_coefs[0] = -0.1477 #intercept
+USR_coefs[-3] = 0.6185
+
+
 X_USR_test = X_test[:,1:3]
 X_USR_train = X_train[:,1:3]
 X_USR = X[:,1:3]
@@ -343,6 +349,7 @@ X_USR = X[:,1:3]
 # Access the errors 
 y_predict_test = USR(X_USR_test)
 y_predict_train = USR(X_USR_train)
+
 
 USR_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 USR_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
@@ -374,10 +381,11 @@ Compare different regression method
 '''
 
 regression_method = [ 'USM', 'Elastic Net', 'LASSO', 'Ridge', 'OLS']
+n_method = len(regression_method)
 
-means_test = np.array([ USR_RMSE_test, enet05_RMSE_test, lasso_RMSE_test, ridge_RMSE_test, P2_RMSE_test])
+means_test = np.array([ USR_RMSE_test, enet05_RMSE_test, lasso_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
 
-r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, P2_r2])
+r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, OLS_r2])
 
 base_line = 0
 x_pos = np.arange(len(regression_method))
@@ -393,7 +401,7 @@ rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,
                 label='r2')
 #plt.ylim([-1,18])
 ax1.set_xticks(x_pos+bar_width/2)
-ax1.set_xticklabels(regression_method, rotation=20)
+ax1.set_xticklabels(regression_method, rotation=0)
 ax1.set_xlabel('Model Name')
 #plt.legend(loc= 'best', frameon=False)
 
@@ -405,3 +413,30 @@ ax2.set_ylabel('$R^2$',color = 'b')
 ax2.set_ylim([0.90, 1])
 ax2.tick_params('y', colors='b')
 
+#%%
+'''
+Compare the coefficients across different models
+'''
+import seaborn as sns
+
+coef_matrix = np.array([USR_coefs, lasso_coefs, enet05_coefs, ridge_coefs, OLS_coefs] )
+
+# Set up the matplotlib figure
+fig, ax = plt.subplots(figsize=(10, 6))
+# Generate a custom diverging colormap
+cmap = sns.color_palette("RdBu_r", 7) 
+
+# Draw the heatmap with the mask and correct aspect ratio
+sns.set_style("white")
+sns.heatmap(coef_matrix, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
+            square=True, linewidths=1, cbar_kws={"shrink": .6})
+ax.tick_params('both', length=0, width=0, which='major')
+ax.set_xticks(np.arange(0,len(terms))+0.5)
+ax.set_xticklabels(terms, rotation = 0)
+ax.set_yticks(np.arange(0,n_method)+0.5)
+ax.set_yticklabels(regression_method, rotation = 360)
+ax.set_xlabel('Descriptor')
+ax.set_ylabel('Model Name')
+
+#cbar = fig.colorbar(ax)
+#cbar.ax.tick_params(length=0, width=0)  
