@@ -96,13 +96,13 @@ nDescriptors = X.shape[1]
 
 #%% Preparation before regression
 # Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=5)
                        
 # The alpha grid used for plotting path
 alphas_grid = np.logspace(0, -3, 100)
 
 # Cross-validation scheme                                  
-rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state = 0)
+rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state = 5)
 
 
 # Explicitly take out the train/test set

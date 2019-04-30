@@ -386,7 +386,7 @@ if not os.path.exists(output_dir): os.makedirs(output_dir)
 
 fig, ax = plt.subplots(figsize=(7, 7))
 
-ax.scatter(y, enet05.predict(X), label='Elastic Net ($R^2$ = 0.965)', facecolors='r', alpha = 0.7, s  = 60)
+ax.scatter(y, lasso_cv.predict(X), label='LASSO ($R^2$ = 0.973)', facecolors='r', alpha = 0.7, s  = 60)
 ax.scatter(y, USR(X_USR), label='USM ($R^2$ = 0.966)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
