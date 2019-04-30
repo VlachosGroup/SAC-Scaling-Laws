@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 13 10:20:23 2018
@@ -90,7 +91,7 @@ nDescriptors = X.shape[1]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
                        
 # The alpha grid used for plotting path
-alphas_grid = np.logspace(0, -3, 20)
+alphas_grid = np.logspace(0, -3, 100)
 
 # Cross-validation scheme                                  
 rkf = RepeatedKFold(n_splits = 10, n_repeats = 1 , random_state = 0)
@@ -257,7 +258,7 @@ fdata = pd.DataFrame(np.transpose([l1_ratio_v, enet_n_v, enet_RMSE_test_v]), col
 fdata.to_csv(os.path.join(output_dir, 'enet_data.csv'), index=False, index_label=False)
 
 #%% Plot elastic net results
-plt.figure(figsize=(6,4))
+plt.figure(figsize=(8,6))
 fig, ax1 = plt.subplots()
 ax1.plot(l1_ratio_v, enet_RMSE_test_v, 'bo-')
 ax1.set_xlabel('L1 Ratio')
@@ -306,21 +307,21 @@ enet05_RMSE, enet05_r2 = rtools.parity_plot(y, enet05.predict(X), model_name, ou
 '''
 First order regression
 '''
-model_name = 'LM1_Ebind'
+model_name = 'OLS_Ebind'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-LM1 = linear_model.LinearRegression(fit_intercept=fit_int_flag)
-LM1.fit(X_train,y_train) 
+OLS = linear_model.LinearRegression(fit_intercept=fit_int_flag)
+OLS.fit(X_train,y_train) 
 
 # Access the errors 
-y_predict_test = LM1.predict(X_test)
-y_predict_train = LM1.predict(X_train)
+y_predict_test = OLS.predict(X_test)
+y_predict_train = OLS.predict(X_train)
 
-LM1_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
-LM1_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 
-LM1_RMSE, LM1_r2 = rtools.parity_plot(y, LM1.predict(X), model_name, output_dir)
+OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir)
 #rtools.plot_coef(LM1.coef_, terms, model_name, output_dir)
 
 
@@ -332,8 +333,7 @@ def parity_plot_st(yobj,ypred, model_name, out_dir):
     return R2 score and MSE for the model
     colorcode different site types
     '''
-    RMSE = np.sqrt(np.mean((yobj - ypred)**2))
-    r2 = r2_score(yobj, ypred)
+
     fig, ax = plt.subplots(figsize=(8, 6))
     for metal_type, col in zip(metal_types, cm):
         indices = np.where(np.array(metal) == metal_type)[0]
@@ -351,4 +351,44 @@ def parity_plot_st(yobj,ypred, model_name, out_dir):
     plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
     fig.savefig(os.path.join(output_dir, model_name + '_parity_st.png'))
 
-parity_plot_st(y, LM1.predict(X), model_name, output_dir)
+parity_plot_st(y, OLS.predict(X), model_name, output_dir)
+
+
+#%%
+
+'''
+Compare different regression method
+'''
+
+regression_method = [ 'Elastic Net', 'LASSO', 'Ridge', 'OLS']
+n_method = len(regression_method)
+
+means_test = np.array([ enet05_RMSE_test, lasso_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+
+r2s = np.array([ enet05_r2, lasso_r2, ridge_r2, OLS_r2])
+
+base_line = 0
+x_pos = np.arange(len(regression_method))
+opacity = 0.8
+bar_width = 0.25
+fig, ax1 = plt.subplots(figsize=(8,6))
+ax2 = ax1.twinx()
+rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
+                alpha = opacity, color='r',
+                label='Test')
+rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,  
+                alpha = opacity, color='b',
+                label='r2')
+#plt.ylim([-1,18])
+ax1.set_xticks(x_pos+bar_width/2)
+ax1.set_xticklabels(regression_method, rotation=0)
+ax1.set_xlabel('Model Name')
+#plt.legend(loc= 'best', frameon=False)
+
+ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
+ax1.set_ylim([0, 1])
+ax1.tick_params('y', colors='r')
+
+ax2.set_ylabel('$R^2$',color = 'b')
+ax2.set_ylim([0.5, 1])
+ax2.tick_params('y', colors='b')
