@@ -62,10 +62,15 @@ X_poly = poly.fit_transform(X_init)
 pi = poly.powers_
 pi_unrepeated =  [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 14]
 X_poly_unrepeated = X_poly[:, np.array(pi_unrepeated)]
-X = X_poly_unrepeated
+X = X_poly_unrepeated.copy()
 y = Ea
-Xscaler = StandardScaler().fit(X)
-X= Xscaler.transform(X)
+Xscaler = StandardScaler().fit(X[:,1:])
+
+sv = Xscaler.scale_
+mv = Xscaler.mean_
+
+
+X[:,1:] = Xscaler.transform(X[:,1:])
 fit_int_flag = False # Not fitting for intercept, as the first coefficient is the intercept
 terms = ['$b_0$', '$E_c$', '$E_{bind}$', r'$\frac{E_{bind}}{E_c}$', r'$\frac{E_c}{E_{bind}}$', r'$E_c^2$', '$E_cE_{bind}$', r'$\frac{E_c^2}{E_{bind}}$', '$E_{bind}^2$', r'$\frac{E_{bind}^2}{E_c}$', r'$\frac{E_{bind}^2}{E_c^2}$', r'$\frac{E_c^2}{E_{bind}^2}$']
 #%% Preparation before regression
@@ -77,7 +82,7 @@ X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X
 alphas_grid = np.logspace(0, -3, 20)
 
 # Cross-validation scheme                                  
-rkf = RepeatedKFold(n_splits =10, n_repeats = 1 , random_state = 0)
+rkf = RepeatedKFold(n_splits =10, n_repeats = 10 , random_state = 0)
 
 
 # Explicitly take out the train/test set
@@ -335,18 +340,24 @@ Univerisal scaling relation
 model_name = 'USR'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
+u0= -0.1477 #intercept
+u1 = 0.6185 # the coefficient
 
 def USR(X_init):
 
     Ebind = X_init[:,1]
     Ec = X_init[:,0]
-    Ea = Ebind**2/Ec *0.6185 -0.1477
+    Ea = Ebind**2/Ec *u1 + u0
     
     return Ea
 
 USR_coefs = np.zeros(12)
-USR_coefs[0] = -0.1477 #intercept
-USR_coefs[-3] = 0.6185
+
+'''
+Need to scale USM coef in the same
+'''
+USR_coefs[0] = u0 + mv[-3] * sv[3]
+USR_coefs[-3] = u1*sv[-3]
 
 
 X_USR_test = X_init_test[:,0:2]
@@ -417,11 +428,11 @@ ax1.set_xlabel('Predictive Models')
 #plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
-ax1.set_ylim([0, 0.3])
+ax1.set_ylim([0, 0.25])
 ax1.tick_params('y', colors='r')
 
 ax2.set_ylabel('$R^2$',color = 'b')
-ax2.set_ylim([0.90, 1])
+ax2.set_ylim([0.95, 1])
 ax2.tick_params('y', colors='b')
 fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 
@@ -440,7 +451,7 @@ cmap = sns.color_palette("RdBu_r", 7)
 
 # Draw the heatmap with the mask and correct aspect ratio
 sns.set_style("white")
-sns.heatmap(coef_matrix, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
+sns.heatmap(coef_matrix, cmap=cmap, vmin = -1, vmax=1, center=0,
             square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
 ax.tick_params('both', length=0, width=0, which='major')
 ax.set_xticks(np.arange(0,len(terms))+0.5)

@@ -44,7 +44,13 @@ X_init = np.array(data[descriptors]) #, Ebind**2/Ebind
 y = np.array(data['Ebind'])
 poly = PolynomialFeatures(2)
 
-X = poly.fit_transform(X_init)
+X_poly = poly.fit_transform(X_init)
+X = X_poly
+'''
+Take out the ones
+'''
+
+
 
 fit_int_flag = False # Not fitting for intercept, as the first coefficient is the intercept
 
@@ -96,7 +102,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_
 alphas_grid = np.logspace(0, -3, 100)
 
 # Cross-validation scheme                                  
-rkf = RepeatedKFold(n_splits = 10, n_repeats =1 , random_state = 0)
+rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state = 0)
 
 
 # Explicitly take out the train/test set
@@ -165,7 +171,7 @@ model_name = 'ridge_Ebind'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-alphas_grid_ridge = np.logspace(0, -3, 20)
+alphas_grid_ridge = np.logspace(3, -3, 20)
 ridgeCV = RidgeCV(alphas = alphas_grid_ridge,  cv = rkf, fit_intercept=fit_int_flag)
 ridgeCV.fit(X_train, y_train)
 ridge_alpha = ridgeCV.alpha_ 
@@ -388,9 +394,9 @@ ax1.set_xlabel('Model Name')
 #plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
-ax1.set_ylim([0, 1])
+ax1.set_ylim([0, 0.8])
 ax1.tick_params('y', colors='r')
 
 ax2.set_ylabel('$R^2$',color = 'b')
-ax2.set_ylim([0.5, 1])
+ax2.set_ylim([0.9, 1])
 ax2.tick_params('y', colors='b')
