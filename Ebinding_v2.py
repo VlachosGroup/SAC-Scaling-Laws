@@ -334,7 +334,7 @@ def parity_plot_st(yobj,ypred, model_name, out_dir):
     colorcode different site types
     '''
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(7, 7))
     for metal_type, col in zip(metal_types, cm):
         indices = np.where(np.array(metal) == metal_type)[0]
         ax.scatter(yobj[indices],
@@ -347,7 +347,7 @@ def parity_plot_st(yobj,ypred, model_name, out_dir):
     ax.set_xlabel('DFT-Calculated (eV) ')
     ax.set_ylabel('Model Prediction (eV)')
     #plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
-    plt.text(5,6.5, '$R^2$ = 0.956')
+    plt.text(4,6, '$R^2$ = 0.956')
     plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
     fig.savefig(os.path.join(output_dir, model_name + '_parity_st.png'))
 
@@ -371,7 +371,7 @@ base_line = 0
 x_pos = np.arange(len(regression_method))
 opacity = 0.8
 bar_width = 0.25
-fig, ax1 = plt.subplots(figsize=(8,6))
+fig, ax1 = plt.subplots(figsize=(7,7))
 ax2 = ax1.twinx()
 rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
                 alpha = opacity, color='r',

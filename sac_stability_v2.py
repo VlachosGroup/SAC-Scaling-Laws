@@ -36,9 +36,9 @@ font = {'size'   : 16}
 
 matplotlib.rc('font', **font)
 matplotlib.rcParams['axes.linewidth'] = 1.5
-matplotlib.rcParams['xtick.major.size'] = 16
+matplotlib.rcParams['xtick.major.size'] = 10
 matplotlib.rcParams['xtick.major.width'] = 3
-matplotlib.rcParams['ytick.major.size'] = 16
+matplotlib.rcParams['ytick.major.size'] = 10
 matplotlib.rcParams['ytick.major.width'] = 3
 
 
@@ -362,19 +362,23 @@ USR_RMSE, USR_r2 =rtools.parity_plot(y, USR(X_USR), model_name, output_dir)
 '''
 Compare enet 05 and USR
 '''
+model_name = 'all_models'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)
 
-
-
-fig, ax = plt.subplots(figsize=(8, 6))
+fig, ax = plt.subplots(figsize=(7, 7))
 
 ax.scatter(y, enet05.predict(X), label='Elastic Net ($R^2$ = 0.965)', facecolors='r', alpha = 0.7, s  = 60)
-ax.scatter(y, USR(X_USR), label='Universal Scaling ($R^2$ = 0.966)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
+ax.scatter(y, USR(X_USR), label='USM ($R^2$ = 0.966)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
+ax.set_xticks(np.arange(0,4,0.5))
 ax.set_xlabel('DFT-Calculated (eV)')
 ax.set_ylabel('Model Prediction (eV)')
 #plt.title(r'Method-{}, MSE-{:.2}, $r^2$ -{:.2}'.format(method, MSE, score))
 plt.legend(loc= 'upper left', frameon=False)
 plt.show()
+fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
+
 
 '''
 Compare different regression method
@@ -391,7 +395,7 @@ base_line = 0
 x_pos = np.arange(len(regression_method))
 opacity = 0.8
 bar_width = 0.25
-fig, ax1 = plt.subplots(figsize=(8,6))
+fig, ax1 = plt.subplots(figsize=(7,7))
 ax2 = ax1.twinx()
 rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
                 alpha = opacity, color='r',
@@ -402,7 +406,7 @@ rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,
 #plt.ylim([-1,18])
 ax1.set_xticks(x_pos+bar_width/2)
 ax1.set_xticklabels(regression_method, rotation=0)
-ax1.set_xlabel('Model Name')
+ax1.set_xlabel('Predictive Models')
 #plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
@@ -412,6 +416,7 @@ ax1.tick_params('y', colors='r')
 ax2.set_ylabel('$R^2$',color = 'b')
 ax2.set_ylim([0.90, 1])
 ax2.tick_params('y', colors='b')
+fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 
 #%%
 '''
@@ -422,21 +427,22 @@ import seaborn as sns
 coef_matrix = np.array([USR_coefs, lasso_coefs, enet05_coefs, ridge_coefs, OLS_coefs] )
 
 # Set up the matplotlib figure
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(12, 4))
 # Generate a custom diverging colormap
 cmap = sns.color_palette("RdBu_r", 7) 
 
 # Draw the heatmap with the mask and correct aspect ratio
 sns.set_style("white")
 sns.heatmap(coef_matrix, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
-            square=True, linewidths=1, cbar_kws={"shrink": .6})
+            square=True, linewidths=1, cbar_kws={"shrink": 1})
 ax.tick_params('both', length=0, width=0, which='major')
 ax.set_xticks(np.arange(0,len(terms))+0.5)
 ax.set_xticklabels(terms, rotation = 0)
 ax.set_yticks(np.arange(0,n_method)+0.5)
 ax.set_yticklabels(regression_method, rotation = 360)
 ax.set_xlabel('Descriptor')
-ax.set_ylabel('Model Name')
+ax.set_ylabel('Predictive Models')
+fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
 
 #cbar = fig.colorbar(ax)
 #cbar.ax.tick_params(length=0, width=0)  
