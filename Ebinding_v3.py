@@ -142,6 +142,7 @@ y_predict_train = lasso_cv.predict(X_train)
 
 lasso_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 lasso_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+lasso_r2_train = r2_score(y_train, y_predict_train)
 
 ##Use alpha grid prepare for lassopath
 lasso_RMSE_path, lasso_coef_path = rtools.cal_path(alphas_grid, Lasso, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)
@@ -183,6 +184,7 @@ y_predict_train = ridgeCV.predict(X_train)
 
 ridge_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 ridge_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+ridge_r2_train = r2_score(y_train, y_predict_train)
 
 
 # plot the rigde path
@@ -292,6 +294,7 @@ enet_RMSE_path_05, enet_coef_path_05 = rtools.cal_path(alphas_grid, ElasticNet, 
 rtools.plot_path(X, y, enet_alphas[l1s.index(0.5)], alphas_grid, enet_RMSE_path_05, enet_coef_path_05, enet05, model_name, output_dir)
 
 enet05_RMSE, enet05_r2 = rtools.cal_performance(X, y,enet05 )
+enet05_r2_train = r2_score(y_train, y_predict_train)
 
 # the optimal alpha from lassocv
 enet05_alpha = enet05.alpha_
@@ -328,6 +331,7 @@ y_predict_train = OLS.predict(X_train)
 
 OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+OLS_r2_train = r2_score(y_train, y_predict_train)
 
 OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir)
 #rtools.plot_coef(LM1.coef_, terms, model_name, output_dir)
@@ -355,7 +359,7 @@ def parity_plot_st(yobj,ypred, model_name, out_dir):
     ax.set_xlabel('DFT-Calculated (eV) ')
     ax.set_ylabel('Model Prediction (eV)')
     #plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
-    plt.text(4,6, '$R^2$ = 0.956')
+    plt.text(4,6, '$R^2$ = 0.958')
     plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
     fig.savefig(os.path.join(output_dir, model_name + '_parity_st.png'))
 
@@ -372,8 +376,9 @@ regression_method = [ 'Elastic Net', 'LASSO', 'Ridge', 'OLS']
 n_method = len(regression_method)
 
 means_test = np.array([ enet05_RMSE_test, lasso_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+r2s = np.array([enet05_r2_train, lasso_r2_train, ridge_r2_train, OLS_r2_train])
 
-r2s = np.array([ enet05_r2, lasso_r2, ridge_r2, OLS_r2])
+#r2s = np.array([ enet05_r2, lasso_r2, ridge_r2, OLS_r2])
 
 base_line = 0
 x_pos = np.arange(len(regression_method))
@@ -397,6 +402,6 @@ ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
 ax1.set_ylim([0, 0.8])
 ax1.tick_params('y', colors='r')
 
-ax2.set_ylabel('$R^2$',color = 'b')
+ax2.set_ylabel('Training $R^2$',color = 'b')
 ax2.set_ylim([0.9, 1])
 ax2.tick_params('y', colors='b')

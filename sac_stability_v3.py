@@ -124,6 +124,8 @@ y_predict_train = lasso_cv.predict(X_train)
 
 lasso_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 lasso_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+lasso_r2_train = r2_score(y_train, y_predict_train)
+
 
 ##Use alpha grid prepare for lassopath
 lasso_RMSE_path, lasso_coef_path = rtools.cal_path(alphas_grid, Lasso, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)
@@ -139,6 +141,15 @@ J_index = np.nonzero(lasso_coefs)[0]
 n_nonzero = len(J_index)
 # The values of non-zero coefficients/significant cluster interactions  
 J_nonzero = lasso_coefs[J_index] 
+
+#%%
+'''
+Convert the coefficient to unnormalized form
+'''
+lasso_coefs_unnormailized = np.zeros(len(terms))
+lasso_coefs_unnormailized[1:] = lasso_coefs[1:]/sv
+lasso_coefs_unnormailized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
+
 
 #%%
 '''
@@ -165,6 +176,7 @@ y_predict_train = ridgeCV.predict(X_train)
 
 ridge_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 ridge_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+ridge_r2_train = r2_score(y_train, y_predict_train)
 
 
 # plot the rigde path
@@ -175,7 +187,9 @@ rtools.plot_performance(X, y, ridgeCV,model_name, output_dir)
 ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, output_dir)
 rtools.plot_coef(ridgeCV.coef_, terms, model_name, output_dir)
 
-
+ridge_coefs_unnormailized = np.zeros(len(terms))
+ridge_coefs_unnormailized[1:] = ridge_coefs[1:]/sv
+ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 #%%
 
 from sklearn.linear_model import ElasticNetCV, enet_path, ElasticNet
@@ -210,7 +224,8 @@ def l1_enet(ratio):
     return enet_cv, enet_alpha, n_nonzero, enet_RMSE_test, enet_RMSE_train
 
 # The vector of l1 ratio
-l1s = list(np.around(np.arange(0.1,1,0.05), decimals= 2))
+l1s = [0.01]
+l1s = l1s + list(np.around(np.arange(0.1,1,0.05), decimals= 2))
 #l1s = [.1, .5, .7, .9,  .95,  .99, 1]
 #l1s = [0.95]
 
@@ -281,6 +296,7 @@ enet05_alpha = enet05.alpha_
 enet05_coefs = enet05.coef_
 # The original intercepts 
 enet05_intercept = enet05.intercept_
+enet05_r2_train = r2_score(y_train, enet05.predict(X_train))
 
 
 # The indices for non-zero coefficients/significant cluster interactions 
@@ -292,6 +308,14 @@ J_nonzero = enet05_coefs[J_index]
 enet05_RMSE, enet05_r2 = rtools.parity_plot(y, enet05.predict(X), model_name, output_dir)
 rtools.plot_coef(enet05.coef_, terms, model_name, output_dir)
 
+
+#%%
+'''
+Convert the coefficient to unnormalized form
+'''
+enet05_coefs_unnormailized = np.zeros(len(terms))
+enet05_coefs_unnormailized[1:] = enet05_coefs[1:]/sv
+enet05_coefs_unnormailized[0] = enet05_coefs[0] - np.sum(mv/sv*enet05_coefs[1:])
 #%%
 '''
 PLS regression 
@@ -304,6 +328,7 @@ PLS.fit(X_train,y_train)
 # Access the errors 
 y_predict_test = PLS.predict(X_test)
 y_predict_train = PLS.predict(X_train)
+PLS_r2_train = r2_score(y_train, y_predict_train)
 
 PLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 PLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
@@ -325,6 +350,7 @@ OLS_coefs = OLS.coef_
 # Access the errors 
 y_predict_test = OLS.predict(X_test)
 y_predict_train = OLS.predict(X_train)
+OLS_r2_train = r2_score(y_train, y_predict_train)
 
 OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
@@ -332,7 +358,9 @@ OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir)
 rtools.plot_coef(OLS.coef_, terms, model_name, output_dir)
 
-
+OLS_coefs_unnormailized = np.zeros(len(terms))
+OLS_coefs_unnormailized[1:] = OLS_coefs[1:]/sv
+OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 #%%
 '''
 Univerisal scaling relation
@@ -367,6 +395,7 @@ X_USR = X_init[:,0:2]
 # Access the errors 
 y_predict_test = USR(X_USR_test)
 y_predict_train = USR(X_USR_train)
+USR_r2_train = r2_score(y_train, y_predict_train)
 
 
 USR_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
@@ -386,8 +415,8 @@ if not os.path.exists(output_dir): os.makedirs(output_dir)
 
 fig, ax = plt.subplots(figsize=(7, 7))
 
-ax.scatter(y, lasso_cv.predict(X), label='LASSO ($R^2$ = 0.973)', facecolors='r', alpha = 0.7, s  = 60)
-ax.scatter(y, USR(X_USR), label='USM ($R^2$ = 0.966)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
+ax.scatter(y, lasso_cv.predict(X), label='LASSO ($R^2$ = 0.971)', facecolors='r', alpha = 0.7, s  = 60)
+ax.scatter(y, USR(X_USR), label='USM ($R^2$ = 0.964)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
 ax.set_xlabel('DFT-Calculated (eV)')
@@ -402,13 +431,13 @@ fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
 Compare different regression method
 '''
 
-regression_method = [ 'USM', 'Elastic Net', 'LASSO', 'Ridge', 'OLS']
+regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
 n_method = len(regression_method)
 
-means_test = np.array([ USR_RMSE_test, enet05_RMSE_test, lasso_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+means_test = np.array([ USR_RMSE_test,  lasso_RMSE_test, enet05_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
 
-r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, OLS_r2])
-
+#r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, OLS_r2])
+r2s = np.array([ USR_r2_train,  lasso_r2_train, enet05_r2_train, ridge_r2_train, OLS_r2_train])
 base_line = 0
 x_pos = np.arange(len(regression_method))
 opacity = 0.8
@@ -431,7 +460,7 @@ ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
 ax1.set_ylim([0, 0.25])
 ax1.tick_params('y', colors='r')
 
-ax2.set_ylabel('$R^2$',color = 'b')
+ax2.set_ylabel('Training $R^2$',color = 'b')
 ax2.set_ylim([0.95, 1])
 ax2.tick_params('y', colors='b')
 fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
@@ -462,5 +491,10 @@ ax.set_xlabel('Descriptor')
 ax.set_ylabel('Predictive Models')
 fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
 
-#cbar = fig.colorbar(ax)
-#cbar.ax.tick_params(length=0, width=0)  
+#%% 
+'''
+Save the coefficients into a csv file
+'''
+coefs = np.array([lasso_coefs, lasso_coefs_unnormailized, enet05_coefs, enet05_coefs_unnormailized, ridge_coefs, ridge_coefs_unnormailized,  OLS_coefs, OLS_coefs_unnormailized])
+df_coefs = pd.DataFrame(coefs.T, columns = ['LASSO', 'LASSO', 'Elastic Net', 'Elastic Net', 'Ridge', 'Ridge', 'OLS', 'OLS'])
+df_coefs.to_csv('Stability.csv')
