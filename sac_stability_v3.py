@@ -82,7 +82,7 @@ X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X
 alphas_grid = np.logspace(0, -3, 20)
 
 # Cross-validation scheme                                  
-rkf = RepeatedKFold(n_splits =10, n_repeats = 10 , random_state = 0)
+rkf = RepeatedKFold(n_splits =10, n_repeats = 10 , random_state = 7)
 
 
 # Explicitly take out the train/test set
@@ -224,7 +224,7 @@ def l1_enet(ratio):
     return enet_cv, enet_alpha, n_nonzero, enet_RMSE_test, enet_RMSE_train
 
 # The vector of l1 ratio
-l1s = [0.01]
+l1s = [0.01, 0.05]
 l1s = l1s + list(np.around(np.arange(0.1,1,0.05), decimals= 2))
 #l1s = [.1, .5, .7, .9,  .95,  .99, 1]
 #l1s = [0.95]
@@ -280,42 +280,47 @@ fig.tight_layout()
 fig.savefig(os.path.join(output_dir, 'elastic_net.png'))
 
 
+#%%enet_path to get alphas and coef_path
 '''
-#Use alpha grid prepare for enet_path when l1_ratio  = 0.95
+#Use alpha grid prepare for enet_path when RMSE is mininal 
 '''
-enet05 = enet[l1s.index(0.5)]
-enet05_RMSE_test = np.sqrt(mean_squared_error(y_test, enet05.predict(X_test)))
-enet_RMSE_path_05, enet_coef_path_05 = rtools.cal_path(alphas_grid, ElasticNet, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)    
-rtools.plot_path(X, y, enet_alphas[l1s.index(0.5)], alphas_grid, enet_RMSE_path_05, enet_coef_path_05, enet05, model_name, output_dir)
+#enet_alphas_095, enet_coef_path_095, _ = enet_path(X_train, y_train, l1_ratio=0.95, alphas = alphas_grid, fit_intercept=fit_int_flag)
+enet_RMSE_path, enet_coef_path = rtools.cal_path(alphas_grid, ElasticNet, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)    
+enet_min_index = np.argmin(enet_RMSE_test)
+l1s_min = l1s[enet_min_index] 
+enet_min = enet[enet_min_index]
+enet_min_RMSE_test = np.amin(enet_RMSE_test)
+rtools.plot_path(X, y, enet_alphas[enet_min_index], alphas_grid, enet_RMSE_path, enet_coef_path, enet[enet_min_index], model_name, output_dir)
 
-enet05_RMSE, enet05_r2 = rtools.cal_performance(X, y,enet05 )
+
+#%% Select the significant cluster interactions 
 
 # the optimal alpha from lassocv
-enet05_alpha = enet05.alpha_
+enet_min_alpha = enet_min.alpha_
 # Coefficients for each term
-enet05_coefs = enet05.coef_
+enet_min_coefs = enet_min.coef_
 # The original intercepts 
-enet05_intercept = enet05.intercept_
-enet05_r2_train = r2_score(y_train, enet05.predict(X_train))
+enet_min_intercept = enet_min.intercept_
+enet_min_r2_train = r2_score(y_train, enet_min.predict(X_train))
 
 
 # The indices for non-zero coefficients/significant cluster interactions 
-J_index = np.nonzero(enet05_coefs)[0]
+J_index = np.nonzero(enet_min_coefs)[0]
 # The number of non-zero coefficients/significant cluster interactions  
 n_nonzero = len(J_index)
 # The values of non-zero coefficients/significant cluster interactions  
-J_nonzero = enet05_coefs[J_index] 
-enet05_RMSE, enet05_r2 = rtools.parity_plot(y, enet05.predict(X), model_name, output_dir)
-rtools.plot_coef(enet05.coef_, terms, model_name, output_dir)
+J_nonzero = enet_min_coefs[J_index] 
+enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_name, output_dir)
+rtools.plot_coef(enet_min.coef_, terms, model_name, output_dir)
 
 
 #%%
 '''
 Convert the coefficient to unnormalized form
 '''
-enet05_coefs_unnormailized = np.zeros(len(terms))
-enet05_coefs_unnormailized[1:] = enet05_coefs[1:]/sv
-enet05_coefs_unnormailized[0] = enet05_coefs[0] - np.sum(mv/sv*enet05_coefs[1:])
+enet_min_coefs_unnormailized = np.zeros(len(terms))
+enet_min_coefs_unnormailized[1:] = enet_min_coefs[1:]/sv
+enet_min_coefs_unnormailized[0] = enet_min_coefs[0] - np.sum(mv/sv*enet_min_coefs[1:])
 #%%
 '''
 PLS regression 
@@ -415,7 +420,7 @@ if not os.path.exists(output_dir): os.makedirs(output_dir)
 
 fig, ax = plt.subplots(figsize=(7, 7))
 
-ax.scatter(y, lasso_cv.predict(X), label='LASSO ($R^2$ = 0.971)', facecolors='r', alpha = 0.7, s  = 60)
+ax.scatter(y, enet_min.predict(X), label='Elastic Net ($R^2$ = 0.969)', facecolors='r', alpha = 0.7, s  = 60)
 ax.scatter(y, USR(X_USR), label='USM ($R^2$ = 0.964)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
@@ -434,10 +439,10 @@ Compare different regression method
 regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
 n_method = len(regression_method)
 
-means_test = np.array([ USR_RMSE_test,  lasso_RMSE_test, enet05_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+means_test = np.array([ USR_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
 
 #r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, OLS_r2])
-r2s = np.array([ USR_r2_train,  lasso_r2_train, enet05_r2_train, ridge_r2_train, OLS_r2_train])
+r2s = np.array([ USR_r2_train,  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
 base_line = 0
 x_pos = np.arange(len(regression_method))
 opacity = 0.8
@@ -471,7 +476,7 @@ Compare the coefficients across different models
 '''
 import seaborn as sns
 
-coef_matrix = np.array([USR_coefs, lasso_coefs, enet05_coefs, ridge_coefs, OLS_coefs] )
+coef_matrix = np.array([USR_coefs, lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
 
 # Set up the matplotlib figure
 fig, ax = plt.subplots(figsize=(16, 4))
@@ -495,6 +500,6 @@ fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
 '''
 Save the coefficients into a csv file
 '''
-coefs = np.array([lasso_coefs, lasso_coefs_unnormailized, enet05_coefs, enet05_coefs_unnormailized, ridge_coefs, ridge_coefs_unnormailized,  OLS_coefs, OLS_coefs_unnormailized])
+coefs = np.array([lasso_coefs, lasso_coefs_unnormailized, enet_min_coefs, enet_min_coefs_unnormailized, ridge_coefs, ridge_coefs_unnormailized,  OLS_coefs, OLS_coefs_unnormailized])
 df_coefs = pd.DataFrame(coefs.T, columns = ['LASSO', 'LASSO', 'Elastic Net', 'Elastic Net', 'Ridge', 'Ridge', 'OLS', 'OLS'])
 df_coefs.to_csv('Stability.csv')
