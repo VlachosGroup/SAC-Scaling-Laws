@@ -10,28 +10,29 @@ Test SAC_stability V2
 Standize data
 '''
 import os
-import regression_tools as rtools
+import pickle
 
-from sklearn.decomposition import PCA 
-from sklearn.preprocessing import StandardScaler 
-from sklearn import linear_model 
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.preprocessing import PolynomialFeatures 
-from sklearn.pipeline import Pipeline
-from scipy.stats import norm
-from sklearn.model_selection import RepeatedKFold, LeaveOneOut, cross_val_score, train_test_split
+import matplotlib
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
 
 import pandas as pd
-import numpy as np
-import pickle 
+import seaborn as sns
+from scipy.stats import norm
+from sklearn import linear_model
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.decomposition import PCA
 
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt 
-import matplotlib
+from sklearn.linear_model import (ElasticNet, ElasticNetCV, Lasso, LassoCV,
+                                  Ridge, RidgeCV, enet_path, lasso_path)
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import (LeaveOneOut, RepeatedKFold,
+                                     cross_val_score, train_test_split)
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
-
-
-
+import regression_tools as rtools
 
 font = {'size'   : 16}
 
@@ -97,8 +98,6 @@ for train_index, test_index in rkf.split(X_train):
 
 
 #%% LASSO regression
-from sklearn.linear_model import LassoCV, lasso_path, Lasso
-
 '''   
 # LassoCV to obtain the best alpha, the proper training of Lasso
 '''
@@ -155,7 +154,6 @@ lasso_coefs_unnormailized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 '''
 # Ridge regression
 '''
-from sklearn.linear_model import RidgeCV, Ridge
 '''
 # RidgeCV to obtain the best alpha, the proper training of ridge
 '''
@@ -190,15 +188,12 @@ rtools.plot_coef(ridgeCV.coef_, terms, model_name, output_dir)
 ridge_coefs_unnormailized = np.zeros(len(terms))
 ridge_coefs_unnormailized[1:] = ridge_coefs[1:]/sv
 ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
-#%%
 
-from sklearn.linear_model import ElasticNetCV, enet_path, ElasticNet
-
+#%% elastic net results
 model_name = 'enet'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-  
 def l1_enet(ratio):
     
     '''
@@ -249,10 +244,7 @@ for i, l1i in enumerate(l1s):
     enet_RMSE_test.append(RMSE_test)
     enet_RMSE_train.append(RMSE_train)
 
-
 #%% Save elastic net results to csv
-import pandas as pd
-
 # expand the vector, put the result of ridge to the first
 l1_ratio_v = np.array([0] + l1s)
 enet_n_v  = np.array([X.shape[1]] + enet_n)
@@ -325,7 +317,6 @@ enet_min_coefs_unnormailized[0] = enet_min_coefs[0] - np.sum(mv/sv*enet_min_coef
 '''
 PLS regression 
 '''
-from sklearn.cross_decomposition import PLSRegression
 
 PLS = PLSRegression(n_components = 3, tol=1e-8) #<- N_components tells the model how many sub-components to select
 PLS.fit(X_train,y_train) 
@@ -436,15 +427,19 @@ fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
 Compare different regression method
 '''
 
-regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
+# regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
+regression_method = [ 'LASSO', 'Elastic Net', 'Ridge', 'OLS']
 n_method = len(regression_method)
 
-means_test = np.array([ USR_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+#means_test = np.array([ USR_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+means_test = np.array([ lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+#r2s = np.array([ USR_r2_train,  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
 
-#r2s = np.array([ USR_r2, enet05_r2, lasso_r2, ridge_r2, OLS_r2])
-r2s = np.array([ USR_r2_train,  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
-base_line = 0
+r2s = np.array([  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
+#x_pos = np.arange(len(regression_method))
 x_pos = np.arange(len(regression_method))
+base_line = 0
+
 opacity = 0.8
 bar_width = 0.25
 fig, ax1 = plt.subplots(figsize=(7,7))
@@ -457,6 +452,7 @@ rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,
                 label='r2')
 #plt.ylim([-1,18])
 ax1.set_xticks(x_pos+bar_width/2)
+#ax1.set_xticklabels(regression_method, rotation=0)
 ax1.set_xticklabels(regression_method, rotation=0)
 ax1.set_xlabel('Predictive Models')
 #plt.legend(loc= 'best', frameon=False)
@@ -474,10 +470,9 @@ fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 '''
 Compare the coefficients across different models
 '''
-import seaborn as sns
 
-coef_matrix = np.array([USR_coefs, lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
-
+#coef_matrix = np.array([USR_coefs, lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
+coef_matrix = np.array([lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
 # Set up the matplotlib figure
 fig, ax = plt.subplots(figsize=(16, 4))
 # Generate a custom diverging colormap
