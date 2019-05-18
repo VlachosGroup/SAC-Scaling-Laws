@@ -6,8 +6,9 @@ Created on Thu Apr 25 13:48:34 2019
 """
 
 '''
-Test SAC_stability V2
-Standize data
+Test SAC_stability
+Standize 
+Use experimental values for Ec cohesive
 '''
 import os
 import pickle
@@ -50,7 +51,7 @@ read adsoprtion energy and barder charge from a csv file
 data = pd.read_csv('Ea_data.csv', header = 0)
 
 metal = np.array(data['Metal'])
-Ec = np.array(data['Ebulk'])
+Ec = np.array(data['Ec'])
 Ebind = np.array(data['Ebind'])
 Ea = np.array(data['Ea'])
 
@@ -76,14 +77,14 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 terms = ['$b_0$', '$E_c$', '$E_{bind}$', r'$\frac{E_{bind}}{E_c}$', r'$\frac{E_c}{E_{bind}}$', r'$E_c^2$', '$E_cE_{bind}$', r'$\frac{E_c^2}{E_{bind}}$', '$E_{bind}^2$', r'$\frac{E_{bind}^2}{E_c}$', r'$\frac{E_{bind}^2}{E_c^2}$', r'$\frac{E_c^2}{E_{bind}^2}$']
 #%% Preparation before regression
 # Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.1, random_state=0)
+X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.25, random_state=0)
                     
                     
 # The alpha grid used for plotting path
 alphas_grid = np.logspace(0, -3, 20)
 
 # Cross-validation scheme                                  
-rkf = RepeatedKFold(n_splits =10, n_repeats = 10 , random_state = 7)
+rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state = 0)
 
 
 # Explicitly take out the train/test set
@@ -458,11 +459,11 @@ ax1.set_xlabel('Predictive Models')
 #plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
-ax1.set_ylim([0, 0.25])
+ax1.set_ylim([0, 0.4])
 ax1.tick_params('y', colors='r')
 
 ax2.set_ylabel('Training $R^2$',color = 'b')
-ax2.set_ylim([0.95, 1])
+ax2.set_ylim([0, 1])
 ax2.tick_params('y', colors='b')
 fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 
