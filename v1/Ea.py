@@ -51,7 +51,7 @@ read adsoprtion energy and barder charge from a csv file
 data = pd.read_csv('Ea_data.csv', header = 0)
 
 metal = np.array(data['Metal'])
-Ec = np.array(data['Ec'])
+Ec = np.array(data['Ec_DFT'])
 Ebind = np.array(data['Ebind'])
 Ea = np.array(data['Ea'])
 
@@ -77,7 +77,7 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 terms = ['$b_0$', '$E_c$', '$E_{bind}$', r'$\frac{E_{bind}}{E_c}$', r'$\frac{E_c}{E_{bind}}$', r'$E_c^2$', '$E_cE_{bind}$', r'$\frac{E_c^2}{E_{bind}}$', '$E_{bind}^2$', r'$\frac{E_{bind}^2}{E_c}$', r'$\frac{E_{bind}^2}{E_c^2}$', r'$\frac{E_c^2}{E_{bind}^2}$']
 #%% Preparation before regression
 # Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.25, random_state=0)
+X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.2, random_state=0)
                     
                     
 # The alpha grid used for plotting path
@@ -360,46 +360,39 @@ OLS_coefs_unnormailized[1:] = OLS_coefs[1:]/sv
 OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 #%%
 '''
-Univerisal scaling relation
+Univerisal scaling model, fit Ebind^2/Ec vs Ea
 '''
-model_name = 'USR'
+model_name = 'USM'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
-u0= -0.1477 #intercept
-u1 = 0.6185 # the coefficient
 
-def USR(X_init):
-
-    Ebind = X_init[:,1]
-    Ec = X_init[:,0]
-    Ea = Ebind**2/Ec *u1 + u0
-    
-    return Ea
-
-USR_coefs = np.zeros(12)
-
-'''
-Need to scale USM coef in the same
-'''
-USR_coefs[0] = u0 + mv[-3] * sv[3]
-USR_coefs[-3] = u1*sv[-3]
-
-
-X_USR_test = X_init_test[:,0:2]
-X_USR_train = X_init_train[:,0:2]
-X_USR = X_init[:,0:2]
+USM = linear_model.LinearRegression(fit_intercept=fit_int_flag)
+term_index = 9
+X_USM_test = X_test[:,[0,term_index]]
+X_USM_train = X_train[:,[0,term_index]]
+X_USM = X[:,[0,term_index]]
+USM.fit(X_USM_train,y_train) 
+USM_coefs = np.zeros(12)
+USM_coefs[[0,term_index]] = USM.coef_
 
 # Access the errors 
-y_predict_test = USR(X_USR_test)
-y_predict_train = USR(X_USR_train)
-USR_r2_train = r2_score(y_train, y_predict_train)
+y_predict_test = USM.predict(X_USM_test)
+y_predict_train = USM.predict(X_USM_train)
+USM_r2_train = r2_score(y_train, y_predict_train)
 
 
-USR_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
-USR_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
-USR_RMSE, USR_r2 =rtools.parity_plot(y, USR(X_USR), model_name, output_dir)
-#USR_sigma = rtools.error_distribution(y, USR(X_USR), model_name)
-#USR_RMSE, USR_r2 = rtools.cal_performance(X, y, LM1)
+USM_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+USM_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+USM_RMSE, USM_r2 =rtools.parity_plot(y, USM.predict(X_USM), model_name, output_dir)
+rtools.plot_coef(USM_coefs, terms, model_name, output_dir)
+
+# the unnormalized coefficients
+USM_coefs_unnormailized = np.zeros(len(terms))
+USM_coefs_unnormailized[1:] = USM_coefs[1:]/sv
+USM_coefs_unnormailized[0] = USM_coefs[0] - np.sum(mv/sv*USM_coefs[1:])
+u0= USM_coefs_unnormailized[0] #intercept
+u1 = USM_coefs_unnormailized[term_index] # the coefficient
+
 
 
 #%%
@@ -412,8 +405,8 @@ if not os.path.exists(output_dir): os.makedirs(output_dir)
 
 fig, ax = plt.subplots(figsize=(7, 7))
 
-ax.scatter(y, enet_min.predict(X), label='Elastic Net ($R^2$ = 0.969)', facecolors='r', alpha = 0.7, s  = 60)
-ax.scatter(y, USR(X_USR), label='USM ($R^2$ = 0.964)', facecolors='b', marker="o", alpha = 0.7, s  = 60)
+ax.scatter(y, enet_min.predict(X), label='Elastic Net ($R^2$ =' + str(np.around(enet_min_r2_train, decimals = 3)) +' )', facecolors='r', alpha = 0.7, s  = 60)
+ax.scatter(y, USM.predict(X_USM), label='USM ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +' )', facecolors='b', marker="o", alpha = 0.7, s  = 60)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
 ax.set_xlabel('DFT-Calculated (eV)')
@@ -428,15 +421,17 @@ fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
 Compare different regression method
 '''
 
-# regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
-regression_method = [ 'LASSO', 'Elastic Net', 'Ridge', 'OLS']
+regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
+#regression_method = [ 'LASSO', 'Elastic Net', 'Ridge', 'OLS']
 n_method = len(regression_method)
 
-#means_test = np.array([ USR_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
-means_test = np.array([ lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
-#r2s = np.array([ USR_r2_train,  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
+means_test = np.array([ USM_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+r2s = np.array([ USM_r2_train,  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
 
-r2s = np.array([  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
+#means_test = np.array([ lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+#r2s = np.array([  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
+
+
 #x_pos = np.arange(len(regression_method))
 x_pos = np.arange(len(regression_method))
 base_line = 0
@@ -459,11 +454,11 @@ ax1.set_xlabel('Predictive Models')
 #plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
-ax1.set_ylim([0, 0.4])
+ax1.set_ylim([0, 0.3])
 ax1.tick_params('y', colors='r')
 
 ax2.set_ylabel('Training $R^2$',color = 'b')
-ax2.set_ylim([0, 1])
+ax2.set_ylim([0.9, 1])
 ax2.tick_params('y', colors='b')
 fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 
@@ -472,8 +467,8 @@ fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 Compare the coefficients across different models
 '''
 
-#coef_matrix = np.array([USR_coefs, lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
-coef_matrix = np.array([lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
+coef_matrix = np.array([USM_coefs, lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
+#coef_matrix = np.array([lasso_coefs, enet_min_coefs, ridge_coefs, OLS_coefs] )
 # Set up the matplotlib figure
 fig, ax = plt.subplots(figsize=(16, 4))
 # Generate a custom diverging colormap
@@ -496,6 +491,6 @@ fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
 '''
 Save the coefficients into a csv file
 '''
-coefs = np.array([lasso_coefs, lasso_coefs_unnormailized, enet_min_coefs, enet_min_coefs_unnormailized, ridge_coefs, ridge_coefs_unnormailized,  OLS_coefs, OLS_coefs_unnormailized])
-df_coefs = pd.DataFrame(coefs.T, columns = ['LASSO', 'LASSO', 'Elastic Net', 'Elastic Net', 'Ridge', 'Ridge', 'OLS', 'OLS'])
+coefs = np.array([USM_coefs, USM_coefs_unnormailized, lasso_coefs, lasso_coefs_unnormailized, enet_min_coefs, enet_min_coefs_unnormailized, ridge_coefs, ridge_coefs_unnormailized,  OLS_coefs, OLS_coefs_unnormailized])
+df_coefs = pd.DataFrame(coefs.T, columns = ['USM', 'USM', 'LASSO', 'LASSO', 'Elastic Net', 'Elastic Net', 'Ridge', 'Ridge', 'OLS', 'OLS'])
 df_coefs.to_csv('Stability.csv')
