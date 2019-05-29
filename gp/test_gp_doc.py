@@ -14,14 +14,15 @@ x1 = np.arange(-1, 1, .1)
 x0, x1 = np.meshgrid(x0, x1)
 y_truth = x0**2 - x1**2 + x1 - 1
 
-ax = plt.figure().gca(projection='3d')
+fig = plt.figure()
+ax = plt.axes(projection='3d')
 ax.set_xlim(-1, 1)
 ax.set_ylim(-1, 1)
 ax.set_xticks(np.arange(-1, 1.01, .5))
 ax.set_yticks(np.arange(-1, 1.01, .5))
 surf = ax.plot_surface(x0, x1, y_truth, rstride=1,
                        cstride=1, color='green', alpha=0.5)
-plt.show()
+fig.savefig('ground_truth.png')
 
 
 rng = check_random_state(0)
@@ -36,7 +37,7 @@ y_test = X_test[:, 0]**2 - X_test[:, 1]**2 + X_test[:, 1] - 1
 
 
 est_gp = SymbolicRegressor(population_size=5000,
-                           generations=1, stopping_criteria=0.1,
+                           generations=20, stopping_criteria=0.01,
                            p_crossover=0.7, p_subtree_mutation=0.1,
                            p_hoist_mutation=0.05, p_point_mutation=0.1,
                            max_samples=0.9, verbose=1,
@@ -78,9 +79,9 @@ for i, (y, score, title) in enumerate([(y_truth, None, "Ground Truth"),
         score = ax.text(-.7, 1, .2, "$R^2 =\/ %.6f$" % score, 'x', fontsize=14)
     plt.title(title)
 
-plt.show()
+fig.savefig('model_comparsion.png')
+
 
 dot_data = est_gp._program.export_graphviz()
 graph = graphviz.Source(dot_data)
 graph.render('images/ex1_child', format='png', cleanup=True)
-graph
