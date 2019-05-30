@@ -15,7 +15,7 @@ from sklearn.model_selection import (LeaveOneOut, RepeatedKFold,
 import pandas as pd
 import graphviz
 
-
+ri = 4
 '''
 read adsoprtion energy and barder charge from a csv file
 '''
@@ -34,10 +34,8 @@ y = Ea
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=0)
 
-ri = 10
-
 est_gp = SymbolicRegressor(population_size=5000, metric = 'rmse', n_jobs = 5,
-                           generations=10, stopping_criteria=0.25,
+                           generations=20, stopping_criteria=0.1,
                            p_crossover=0.7, p_subtree_mutation=0.1,
                            p_hoist_mutation=0.05, p_point_mutation=0.1,
                            max_samples=0.9, verbose=1,
@@ -52,4 +50,4 @@ print('Test {}: \n mae: {} \n rmse: {} \n'.format(model_name, test_mae, test_rms
 
 dot_data = est_gp._program.export_graphviz()
 graph = graphviz.Source(dot_data)
-graph.render('images/ea_child', format='png', cleanup=True)
+graph.render('images/ea_'+str(ri), format='png', cleanup=True)
