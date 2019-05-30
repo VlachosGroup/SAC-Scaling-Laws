@@ -4,6 +4,9 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.utils.random import check_random_state
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+import matplotlib
+matplotlib.use('agg')
+
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,19 +34,21 @@ y = Ea
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=0)
 
-est_gp = SymbolicRegressor(population_size=5000,
-                           generations=100, stopping_criteria=0.01,
+ri = 10
+
+est_gp = SymbolicRegressor(population_size=5000, metric = 'rmse', n_jobs = 5,
+                           generations=10, stopping_criteria=0.25,
                            p_crossover=0.7, p_subtree_mutation=0.1,
                            p_hoist_mutation=0.05, p_point_mutation=0.1,
                            max_samples=0.9, verbose=1,
-                           parsimony_coefficient=0.1, random_state=0)
+                           parsimony_coefficient=0.01, random_state=ri)
 est_gp.fit(X_train, y_train)
 print(est_gp._program)
 
 y_test_pred = est_gp.predict(X_test)
-mae = mean_absolute_error(y_test, y_test_pred)
-mse = mean_squared_error(y_test, y_test_pred)
-print('Model {}: \n mae: {} \n mse: {} \n'.format(model_name, mae, mse))
+test_mae = mean_absolute_error(y_test, y_test_pred)
+test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
+print('Test {}: \n mae: {} \n rmse: {} \n'.format(model_name, test_mae, test_rmse))
 
 dot_data = est_gp._program.export_graphviz()
 graph = graphviz.Source(dot_data)
