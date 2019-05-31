@@ -294,8 +294,9 @@ def error_distribution(yobj, ypred, model_name, output_dir):
 
     return sigma
 
-def plot_coef(coefs, terms, model_name,  output_dir):
+def plot_coef(coefs, model_name,  output_dir, terms = None):
     
+    if not terms == None:  terms = [str(i) for i in len(coefs)]
     xi = np.arange(len(coefs))*2
     fig, ax = plt.subplots(figsize=(8,6))
     plt.bar(xi, coefs)
