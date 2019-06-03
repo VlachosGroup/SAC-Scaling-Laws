@@ -57,12 +57,12 @@ Ec = np.array(data['Ec_DFT'])
 Ebind = np.array(data['Ebind'])
 Ea = np.array(data['Ea'])
 
-orders = [-0.5, 0.5, -1, 1, -2, 2]
+orders = [1, -1, 0.5, -0.5, 2, -2]
 def transformers(xv, orders):
 
     x_features = np.reshape(xv, (len(xv),1))
     
-    for oi in orders:
+    for oi in orders[1:]:
         x_features = np.concatenate((x_features, np.reshape(xv, (len(xv),1))**oi), axis = 1)
     
     '''
@@ -72,7 +72,24 @@ def transformers(xv, orders):
     
     return x_features
     
+
+x_primary_feature_names = ['Ec', 'Ebind']
+x_secondary_feature_names_2d = []
+orders_log = orders + ['ln']
+all_orders_log = []
+
+for xi in x_primary_feature_names:  
+    x_secondary_feature_names_2d.append([xi + '_' + str(oi) for oi in orders_log])
+    all_orders_log += orders_log
     
+x_secondary_feature_names = []
+for xi in x_secondary_feature_names_2d:
+    x_secondary_feature_names += xi
+
+
+
+
+#%%
 Ec_features = transformers(Ec, orders)    
 Ebind_features = transformers(Ebind, orders)   
 
@@ -80,11 +97,64 @@ Ebind_features = transformers(Ebind, orders)
 X_init = np.concatenate((Ec_features, Ebind_features),axis = 1) 
 
 
-poly = PolynomialFeatures(2)
+poly = PolynomialFeatures(2, interaction_only=True)
 X_poly = poly.fit_transform(X_init)
-orders_m = poly.powers_.T
+orders_m = poly.powers_
 
-X = X_poly.copy()
+x_features_all = ['b']
+poly_indices_nonrepeat = [0]
+
+for pi, powers in enumerate(poly.powers_):
+    
+    powers_nonzero = (powers > 0).nonzero()[0]
+    
+    if not list(powers_nonzero) == []:
+        
+        features_nonzero = [x_secondary_feature_names[pi] for pi in powers_nonzero]
+        orders_nonzero = np.array([all_orders_log[pi] for pi in powers_nonzero])
+    
+        try: 
+            ordersum = orders_nonzero.sum()
+            f1_order = powers_nonzero[0] in range(0, len(x_secondary_feature_names_2d[0]))
+            f2_order = powers_nonzero[1] in range(len(x_secondary_feature_names_2d[0]), len(x_secondary_feature_names_2d[0])+len(x_secondary_feature_names_2d[1]))
+        
+            if ordersum == 0:
+                if (f1_order and f2_order):
+                    pass
+                else:
+                    x_features_all.append(features_nonzero)
+                    poly_indices_nonrepeat.append(pi)
+            else:
+                    x_features_all.append(features_nonzero)
+                    poly_indices_nonrepeat.append(pi)
+       
+        except:
+            
+            x_features_all.append(features_nonzero)
+            poly_indices_nonrepeat.append(pi)
+
+poly_indices_nonrepeat = np.array(poly_indices_nonrepeat)
+
+x_features_nonzero_combined = []
+for fi in x_features_all:
+    if len(fi) > 1:
+        fi_combined = []
+        for fj in fi:
+            fi_combined += fj
+            fi_combined = ''.join(fi_combined)
+
+        x_features_nonzero_combined.append(fi_combined)
+        
+    else: x_features_nonzero_combined.append(fi[0])
+        
+            
+            
+            
+#%%
+
+
+
+X = X_poly[:,poly_indices_nonrepeat]
 y = Ea
 Xscaler = StandardScaler().fit(X[:,1:])
 
@@ -153,7 +223,7 @@ lasso_RMSE_path, lasso_coef_path = rtools.cal_path(alphas_grid, Lasso, X_cv_trai
 #lasso_alphas, lasso_coef_path, _ = lasso_path(X_train, y_train, alphas = alphas_grid, fit_intercept=fit_int_flag)
 rtools.plot_path(X, y, lasso_alpha, alphas_grid, lasso_RMSE_path, lasso_coef_path, lasso_cv, model_name, output_dir)
 lasso_RMSE, lasso_r2 = rtools.parity_plot(y, lasso_cv.predict(X), model_name, output_dir)
-rtools.plot_coef(lasso_cv.coef_, model_name, output_dir)
+
 
 # The indices for non-zero coefficients/significant cluster interactions 
 J_index = np.nonzero(lasso_coefs)[0]
@@ -161,3 +231,7 @@ J_index = np.nonzero(lasso_coefs)[0]
 n_nonzero = len(J_index)
 # The values of non-zero coefficients/significant cluster interactions  
 J_nonzero = lasso_coefs[J_index] 
+
+# nonzero_freature
+x_feature_nonzero = [x_features_nonzero_combined[pi] for pi in J_index]
+rtools.plot_coef(J_nonzero, model_name, output_dir, x_feature_nonzero)
