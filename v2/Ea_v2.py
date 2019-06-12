@@ -270,37 +270,37 @@ lasso_coefs_unnormailized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 
 #%% Plot coefficients function
-def make_coef_matrix(x_feature_nonzero, J_nonzero):
+def make_coef_matrix(x_features, Js):
     
     '''
     Put the coefficient matrix back
     '''
     
-    lasso_coef_matrix = np.zeros((n_features, n_features))
+    coef_matrix = np.zeros((n_features, n_features))
     
-    for xi, feature_names in enumerate(x_feature_nonzero):
-        Ji = J_nonzero[xi]
+    for xi, feature_names in enumerate(x_features):
+        Ji = Js[xi]
         
         if len(feature_names) == 1:
             
             if feature_names == 'b':
-                lasso_coef_matrix[0,0] = Ji
+                coef_matrix[0,0] = Ji
                 
             else:
                 # row number
                 ri = np.where(np.array(x_secondary_feature_names) == feature_names)[0][0] + 1
                 # column number
                 ci = 0
-                lasso_coef_matrix[ri,ci] = Ji
+                coef_matrix[ri,ci] = Ji
                 
         if len(feature_names) == 2:
             # row number
             ri = np.where(np.array(x_secondary_feature_names) == feature_names[1])[0][0] + 1
             ci = np.where(np.array(x_secondary_feature_names) == feature_names[0])[0][0] + 1
             
-            lasso_coef_matrix[ri,ci]
+            coef_matrix[ri,ci]
             
-    return lasso_coef_matrix
+    return coef_matrix
 
 
 def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
@@ -338,6 +338,10 @@ def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
     ax.set_ylabel('Descriptor 2')
     fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
 
+# Implement the plot functions on lasso
+lasso_coef_matrix = make_coef_matrix(x_feature_nonzero, J_nonzero)
+plot_tri_correlation_matrix(lasso_coef_matrix, model_name, output_dir)    
+    
 
 #%% Ridge regression
 '''
@@ -371,14 +375,16 @@ rtools.plot_RMSE_path(ridge_alpha, alphas_grid_ridge, ridge_RMSE_path, model_nam
 rtools.plot_performance(X, y, ridgeCV,model_name, output_dir)
 
 ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, output_dir)
-rtools.plot_coef(ridgeCV.coef_, terms, model_name, output_dir)
+#rtools.plot_coef(ridgeCV.coef_, x_plot_feature_names, model_name, output_dir)
 
 ridge_coefs_unnormailized = np.zeros_like(ridge_coefs)
 ridge_coefs_unnormailized[1:] = ridge_coefs[1:]/sv
 ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 
-
+# Implement the plot functions on lasso
+ridge_coef_matrix = make_coef_matrix(x_features_poly, ridge_coefs)
+plot_tri_correlation_matrix(ridge_coef_matrix, model_name, output_dir) 
 
 
 
