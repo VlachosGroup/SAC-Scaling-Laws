@@ -57,25 +57,38 @@ Ec = np.array(data['Ec_DFT'])
 Ebind = np.array(data['Ebind'])
 Ea = np.array(data['Ea'])
 
+
+'''
+Prepare for the features based on the original data
+'''
+# Numerical orders
 orders = [1, -1, 0.5, -0.5, 2, -2]
+
 def transformers(xv, orders):
 
+    '''
+    Transform each column of primary featurs into secondary features
+    '''
     x_features = np.reshape(xv, (len(xv),1))
     
     for oi in orders[1:]:
         x_features = np.concatenate((x_features, np.reshape(xv, (len(xv),1))**oi), axis = 1)
     
     '''
-    Additional features
+    Add additional features
     '''
     x_features = np.concatenate((x_features, np.log(np.reshape(xv, (len(xv),1)))), axis = 1)
     
     return x_features
-    
-
+'''
+Get the names and orders
+'''    
+# primary and secondary feature names
 x_primary_feature_names = ['Ec', 'Ebind']
 x_secondary_feature_names_2d = []
 orders_log = orders + ['ln']
+
+# The number for all numerical opeators 
 all_orders_log = []
 
 for xi in x_primary_feature_names:  
@@ -87,9 +100,9 @@ for xi in x_secondary_feature_names_2d:
     x_secondary_feature_names += xi
 
 
-
-
-#%%
+'''
+Apply to the data
+''' 
 Ec_features = transformers(Ec, orders)    
 Ebind_features = transformers(Ebind, orders)   
 
@@ -101,9 +114,16 @@ poly = PolynomialFeatures(2, interaction_only=True)
 X_poly = poly.fit_transform(X_init)
 orders_m = poly.powers_
 
-x_features_all = ['b']
-poly_indices_nonrepeat = [0]
+'''
+Select nonzero features
+'''
+x_features_poly = ['b'] # nonzero feature names in a 2d list
+poly_indices_nonrepeat = [0] # indices in the polynominal order matrix 
 
+'''
+Get the indices and feature names for nonzero features, 
+namely with nonzero order
+'''
 for pi, powers in enumerate(poly.powers_):
     
     powers_nonzero = (powers > 0).nonzero()[0]
@@ -114,6 +134,7 @@ for pi, powers in enumerate(poly.powers_):
         orders_nonzero = np.array([all_orders_log[pi] for pi in powers_nonzero])
     
         try: 
+            # making sure the zero sum is from one feature each
             ordersum = orders_nonzero.sum()
             f1_order = powers_nonzero[0] in range(0, len(x_secondary_feature_names_2d[0]))
             f2_order = powers_nonzero[1] in range(len(x_secondary_feature_names_2d[0]), len(x_secondary_feature_names_2d[0])+len(x_secondary_feature_names_2d[1]))
@@ -122,38 +143,35 @@ for pi, powers in enumerate(poly.powers_):
                 if (f1_order and f2_order):
                     pass
                 else:
-                    x_features_all.append(features_nonzero)
+                    x_features_poly.append(features_nonzero)
                     poly_indices_nonrepeat.append(pi)
             else:
-                    x_features_all.append(features_nonzero)
+                    x_features_poly.append(features_nonzero)
                     poly_indices_nonrepeat.append(pi)
        
         except:
             
-            x_features_all.append(features_nonzero)
+            x_features_poly.append(features_nonzero)
             poly_indices_nonrepeat.append(pi)
 
 poly_indices_nonrepeat = np.array(poly_indices_nonrepeat)
 
-x_features_nonzero_combined = []
-for fi in x_features_all:
+
+x_features_poly_combined = []
+for fi in x_features_poly:
     if len(fi) > 1:
         fi_combined = []
         for fj in fi:
             fi_combined += fj
             fi_combined = ''.join(fi_combined)
 
-        x_features_nonzero_combined.append(fi_combined)
+        x_features_poly_combined.append(fi_combined)
         
-    else: x_features_nonzero_combined.append(fi[0])
+    else: x_features_poly_combined.append(fi[0])
         
-            
-            
-            
-#%%
-
-
-
+'''
+Process X and y, scale
+'''
 X = X_poly[:,poly_indices_nonrepeat]
 y = Ea
 Xscaler = StandardScaler().fit(X[:,1:])
@@ -167,6 +185,9 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 
 
 #%% Preparation before regression
+'''
+Cross validation setting
+'''
 # Train test split, save 10% of data point to the test set
 X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.2, random_state=0)
                     
@@ -233,5 +254,48 @@ n_nonzero = len(J_index)
 J_nonzero = lasso_coefs[J_index] 
 
 # nonzero_freature
-x_feature_nonzero = [x_features_nonzero_combined[pi] for pi in J_index]
-rtools.plot_coef(J_nonzero, model_name, output_dir, x_feature_nonzero)
+x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
+x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
+
+rtools.plot_coef(J_nonzero, model_name, output_dir, x_feature_nonzero_combined)
+
+
+#%% Put the coefficient matrix back
+n_features = len(x_secondary_feature_names) + 1
+lasso_coef_matrix = np.zeros((n_features, n_features))
+
+for xi, feature_names in enumerate(x_feature_nonzero):
+    Ji = J_nonzero[xi]
+    
+    if len(feature_names) == 1:
+        
+        if feature_names == 'b':
+            lasso_coef_matrix[0,0] = Ji
+            
+        else:
+            # row number
+            ri = np.where(np.array(x_secondary_feature_names) == feature_names)[0][0] + 1
+            # column number
+            ci = 0
+            lasso_coef_matrix[ri,ci] = Ji
+            
+    if len(feature_names) == 2:
+        # row number
+        ri = np.where(np.array(x_secondary_feature_names) == feature_names[1])[0][0] + 1
+        ci = np.where(np.array(x_secondary_feature_names) == feature_names[0])[0][0] + 1
+        
+        lasso_coef_matrix[ri,ci] = Ji
+
+        
+
+
+        
+
+
+
+
+
+
+
+
+
