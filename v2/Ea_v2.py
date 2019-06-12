@@ -119,6 +119,9 @@ Select nonzero features
 '''
 x_features_poly = ['b'] # nonzero feature names in a 2d list
 poly_indices_nonrepeat = [0] # indices in the polynominal order matrix 
+x_plot_feature_names = ['b'] + x_secondary_feature_names
+n_features = len(x_plot_feature_names)
+
 
 '''
 Get the indices and feature names for nonzero features, 
@@ -253,77 +256,126 @@ n_nonzero = len(J_index)
 # The values of non-zero coefficients/significant cluster interactions  
 J_nonzero = lasso_coefs[J_index] 
 
-# nonzero_freature
+# collect nonzero freature names
 x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
 x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
-
 rtools.plot_coef(J_nonzero, model_name, output_dir, x_feature_nonzero_combined)
 
+'''
+Convert the coefficient to unnormalized form
+'''
+lasso_coefs_unnormailized = np.zeros_like(lasso_coefs)
+lasso_coefs_unnormailized[1:] = lasso_coefs[1:]/sv
+lasso_coefs_unnormailized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
-#%% Put the coefficient matrix back
-x_plot_feature_names = ['b'] + x_secondary_feature_names
-n_features = len(x_plot_feature_names)
-lasso_coef_matrix = np.zeros((n_features, n_features))
 
-for xi, feature_names in enumerate(x_feature_nonzero):
-    Ji = J_nonzero[xi]
+#%% Plot coefficients function
+def make_coef_matrix(x_feature_nonzero, J_nonzero):
     
-    if len(feature_names) == 1:
+    '''
+    Put the coefficient matrix back
+    '''
+    
+    lasso_coef_matrix = np.zeros((n_features, n_features))
+    
+    for xi, feature_names in enumerate(x_feature_nonzero):
+        Ji = J_nonzero[xi]
         
-        if feature_names == 'b':
-            lasso_coef_matrix[0,0] = Ji
+        if len(feature_names) == 1:
             
-        else:
+            if feature_names == 'b':
+                lasso_coef_matrix[0,0] = Ji
+                
+            else:
+                # row number
+                ri = np.where(np.array(x_secondary_feature_names) == feature_names)[0][0] + 1
+                # column number
+                ci = 0
+                lasso_coef_matrix[ri,ci] = Ji
+                
+        if len(feature_names) == 2:
             # row number
-            ri = np.where(np.array(x_secondary_feature_names) == feature_names)[0][0] + 1
-            # column number
-            ci = 0
-            lasso_coef_matrix[ri,ci] = Ji
+            ri = np.where(np.array(x_secondary_feature_names) == feature_names[1])[0][0] + 1
+            ci = np.where(np.array(x_secondary_feature_names) == feature_names[0])[0][0] + 1
             
-    if len(feature_names) == 2:
-        # row number
-        ri = np.where(np.array(x_secondary_feature_names) == feature_names[1])[0][0] + 1
-        ci = np.where(np.array(x_secondary_feature_names) == feature_names[0])[0][0] + 1
-        
-        lasso_coef_matrix[ri,ci] = Ji
-
-#%% Plot the lower trianglar matrix 
-
-corr = lasso_coef_matrix.copy()
-
-# create mask, true for white, false to show the value
-mask = np.zeros_like(corr)
-mask[np.triu_indices_from(mask)] = True
-mask[0,0] = False
-mask[2,1] = True
-mask[4,3] = True
-mask[6,5] = True
-mask[9,8] = True
-mask[11,10] = True
-mask[13,12] = True
+            lasso_coef_matrix[ri,ci]
+            
+    return lasso_coef_matrix
 
 
-# Set up the matplotlib figure
-fig, ax = plt.subplots(figsize=(20, 20))
-# Generate a custom diverging colormap
-cmap = sns.color_palette("RdBu_r", 7) 
-sns.set_style("white")
-sns.heatmap(corr, mask = mask, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
-            square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
-ax.tick_params('both', length=0, width=0, which='major')
-ax.set_xticks(np.arange(0,len(x_plot_feature_names))+0.5)
-ax.set_xticklabels(x_plot_feature_names, rotation = 0)
-ax.set_yticks(np.arange(0,len(x_plot_feature_names))+0.5)
-ax.set_yticklabels(x_plot_feature_names, rotation = 360)
-ax.set_xlabel('Descriptor 1')
-ax.set_ylabel('Descriptor 2')
-fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
+def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
+    
+    '''
+    Plot the correlation matrix in a lower trianglar fashion
+    '''
+    corr = coef_matrix.copy()
+    
+    # create mask, true for white, false to show the value
+    mask = np.zeros_like(corr)
+    mask[np.triu_indices_from(mask)] = True
+    mask[0,0] = False
+    mask[2,1] = True
+    mask[4,3] = True
+    mask[6,5] = True
+    mask[9,8] = True
+    mask[11,10] = True
+    mask[13,12] = True
+    
+    
+    # Set up the matplotlib figure
+    fig, ax = plt.subplots(figsize=(20, 20))
+    # Generate a custom diverging colormap
+    cmap = sns.color_palette("RdBu_r", 7) 
+    sns.set_style("white")
+    sns.heatmap(corr, mask = mask, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
+                square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
+    ax.tick_params('both', length=0, width=0, which='major')
+    ax.set_xticks(np.arange(0,len(x_plot_feature_names))+0.5)
+    ax.set_xticklabels(x_plot_feature_names, rotation = 0)
+    ax.set_yticks(np.arange(0,len(x_plot_feature_names))+0.5)
+    ax.set_yticklabels(x_plot_feature_names, rotation = 360)
+    ax.set_xlabel('Descriptor 1')
+    ax.set_ylabel('Descriptor 2')
+    fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
 
 
-        
+#%% Ridge regression
+'''
+# Ridge regression
+'''
+'''
+# RidgeCV to obtain the best alpha, the proper training of ridge
+'''
+model_name = 'ridge'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
+alphas_grid_ridge = np.logspace(0, -3, 20)
+ridgeCV = RidgeCV(alphas = alphas_grid_ridge,  cv = rkf, fit_intercept=fit_int_flag)
+ridgeCV.fit(X_train, y_train)
+ridge_alpha = ridgeCV.alpha_ 
+ridge_intercept = ridgeCV.intercept_ 
+ridge_coefs = ridgeCV.coef_
 
+# Access the errors 
+y_predict_test = ridgeCV.predict(X_test)
+y_predict_train = ridgeCV.predict(X_train)
 
+ridge_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+ridge_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+ridge_r2_train = r2_score(y_train, y_predict_train)   
+
+# plot the rigde path
+ridge_RMSE_path, ridge_coef_path = rtools.cal_path(alphas_grid_ridge, Ridge, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)
+rtools.plot_RMSE_path(ridge_alpha, alphas_grid_ridge, ridge_RMSE_path, model_name, output_dir)
+rtools.plot_performance(X, y, ridgeCV,model_name, output_dir)
+
+ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, output_dir)
+rtools.plot_coef(ridgeCV.coef_, terms, model_name, output_dir)
+
+ridge_coefs_unnormailized = np.zeros_like(ridge_coefs)
+ridge_coefs_unnormailized[1:] = ridge_coefs[1:]/sv
+ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 
 
