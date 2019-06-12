@@ -261,7 +261,8 @@ rtools.plot_coef(J_nonzero, model_name, output_dir, x_feature_nonzero_combined)
 
 
 #%% Put the coefficient matrix back
-n_features = len(x_secondary_feature_names) + 1
+x_plot_feature_names = ['b'] + x_secondary_feature_names
+n_features = len(x_plot_feature_names)
 lasso_coef_matrix = np.zeros((n_features, n_features))
 
 for xi, feature_names in enumerate(x_feature_nonzero):
@@ -286,7 +287,37 @@ for xi, feature_names in enumerate(x_feature_nonzero):
         
         lasso_coef_matrix[ri,ci] = Ji
 
-        
+#%% Plot the lower trianglar matrix 
+
+corr = lasso_coef_matrix.copy()
+
+# create mask, true for white, false to show the value
+mask = np.zeros_like(corr)
+mask[np.triu_indices_from(mask)] = True
+mask[0,0] = False
+mask[2,1] = True
+mask[4,3] = True
+mask[6,5] = True
+mask[9,8] = True
+mask[11,10] = True
+mask[13,12] = True
+
+
+# Set up the matplotlib figure
+fig, ax = plt.subplots(figsize=(20, 20))
+# Generate a custom diverging colormap
+cmap = sns.color_palette("RdBu_r", 7) 
+sns.set_style("white")
+sns.heatmap(corr, mask = mask, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
+            square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
+ax.tick_params('both', length=0, width=0, which='major')
+ax.set_xticks(np.arange(0,len(x_plot_feature_names))+0.5)
+ax.set_xticklabels(x_plot_feature_names, rotation = 0)
+ax.set_yticks(np.arange(0,len(x_plot_feature_names))+0.5)
+ax.set_yticklabels(x_plot_feature_names, rotation = 360)
+ax.set_xlabel('Descriptor 1')
+ax.set_ylabel('Descriptor 2')
+fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
 
 
         
