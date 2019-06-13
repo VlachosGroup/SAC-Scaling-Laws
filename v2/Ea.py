@@ -334,6 +334,8 @@ def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
     sns.set_style("white")
     sns.heatmap(corr, mask = mask, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
                 square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
+    for _, spine in ax.spines.items():
+        spine.set_visible(True)
     ax.tick_params('both', length=0, width=0, which='major')
     ax.set_xticks(np.arange(0,len(x_plot_feature_names))+0.5)
     ax.set_xticklabels(x_plot_feature_names, rotation = 45)
@@ -459,6 +461,7 @@ fdata = pd.DataFrame(np.transpose([l1_ratio_v, enet_n_v, enet_RMSE_test_v]), col
 fdata.to_csv(os.path.join(output_dir, 'enet_data.csv'), index=False, index_label=False)
 
 #%% Plot elastic net results
+sns.set_style("ticks")
 plt.figure(figsize=(8,6))
 fig, ax1 = plt.subplots()
 ax1.plot(l1_ratio_v, enet_RMSE_test_v, 'bo-')
