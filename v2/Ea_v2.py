@@ -144,10 +144,10 @@ for pi, powers in enumerate(poly.powers_):
         
             if ordersum == 0:
                 if (f1_order and f2_order):
-                    pass
-                else:
                     x_features_poly.append(features_nonzero)
                     poly_indices_nonrepeat.append(pi)
+#                else:
+#                    
             else:
                     x_features_poly.append(features_nonzero)
                     poly_indices_nonrepeat.append(pi)
@@ -192,7 +192,7 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 Cross validation setting
 '''
 # Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.2, random_state=0)
+X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.2, random_state = 0 )
                     
                     
 # The alpha grid used for plotting path
@@ -279,6 +279,7 @@ def make_coef_matrix(x_features, Js):
     coef_matrix = np.zeros((n_features, n_features))
     
     for xi, feature_names in enumerate(x_features):
+    
         Ji = Js[xi]
         
         if len(feature_names) == 1:
@@ -298,7 +299,7 @@ def make_coef_matrix(x_features, Js):
             ri = np.where(np.array(x_secondary_feature_names) == feature_names[1])[0][0] + 1
             ci = np.where(np.array(x_secondary_feature_names) == feature_names[0])[0][0] + 1
             
-            coef_matrix[ri,ci]
+            coef_matrix[ri, ci] = Ji
             
     return coef_matrix
 
@@ -388,3 +389,231 @@ plot_tri_correlation_matrix(ridge_coef_matrix, model_name, output_dir)
 
 
 
+#%% elastic net results
+model_name = 'enet'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)    
+
+def l1_enet(ratio):
+    
+    '''
+    input l1 ratio and return the model, non zero coefficients and cv scores
+    training elastic net properly
+    '''
+    enet_cv  = ElasticNetCV(cv = rkf, l1_ratio=ratio,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=5)
+    enet_cv.fit(X_train, y_train)
+    
+    # the optimal alpha
+    enet_alpha = enet_cv.alpha_
+    enet_coefs = enet_cv.coef_
+    n_nonzero = len(np.where(abs(enet_coefs)>=1e-7)[0])
+    # Access the errors 
+    y_predict_test = enet_cv.predict(X_test)
+    y_predict_train = enet_cv.predict(X_train)
+    
+    # error per cluster
+    enet_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+    enet_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+
+
+    return enet_cv, enet_alpha, n_nonzero, enet_RMSE_test, enet_RMSE_train
+
+# The vector of l1 ratio
+l1s = [0.01, 0.05]
+l1s = l1s + list(np.around(np.arange(0.1,1,0.05), decimals= 2))
+#l1s = [.1, .5, .7, .9,  .95,  .99, 1]
+#l1s = [0.95]
+
+enet = []
+enet_alphas = []
+enet_n  = []
+enet_RMSE_test = []
+enet_RMSE_train = []
+enet_RMSE_test_atom = []
+enet_RMSE_train_atom = []
+
+
+for i, l1i in enumerate(l1s):
+    print('{} % done'.format(100*(i+1)/len(l1s)))
+    enet_cv, ai, n, RMSE_test, RMSE_train = l1_enet(l1i)
+    
+    enet.append(enet_cv)
+    enet_alphas.append(ai)
+    enet_n.append(n)
+    
+    enet_RMSE_test.append(RMSE_test)
+    enet_RMSE_train.append(RMSE_train)
+
+#%% Save elastic net results to csv
+# expand the vector, put the result of ridge to the first
+l1_ratio_v = np.array([0] + l1s)
+enet_n_v  = np.array([X.shape[1]] + enet_n)
+enet_RMSE_test_v = np.array([ridge_RMSE_test] + enet_RMSE_test)
+
+enet_RMSE_test_v = [ridge_RMSE_test] + enet_RMSE_test
+fdata = pd.DataFrame(np.transpose([l1_ratio_v, enet_n_v, enet_RMSE_test_v]), columns = ['l1 ratio', 'number of cluster', 'error per cluster (eV)'])
+fdata.to_csv(os.path.join(output_dir, 'enet_data.csv'), index=False, index_label=False)
+
+#%% Plot elastic net results
+plt.figure(figsize=(8,6))
+fig, ax1 = plt.subplots()
+ax1.plot(l1_ratio_v, enet_RMSE_test_v, 'bo-')
+ax1.set_xlabel('L1 Ratio')
+# Make the y-axis label, ticks and tick labels match the line color.
+ax1.set_ylabel('RMSE/cluster(ev)', color='b')
+ax1.tick_params('y', colors='b')
+
+ax2 = ax1.twinx()
+ax2.plot(l1_ratio_v, enet_n_v, 'r--')
+ax2.set_ylabel('Number of Nonzero Coefficients', color='r')
+ax2.tick_params('y', colors='r')
+
+fig.tight_layout()
+fig.savefig(os.path.join(output_dir, 'elastic_net.png'))
+
+
+#%%enet_path to get alphas and coef_path
+'''
+#Use alpha grid prepare for enet_path when RMSE is mininal 
+'''
+#enet_alphas_095, enet_coef_path_095, _ = enet_path(X_train, y_train, l1_ratio=0.95, alphas = alphas_grid, fit_intercept=fit_int_flag)
+enet_RMSE_path, enet_coef_path = rtools.cal_path(alphas_grid, ElasticNet, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)    
+enet_min_index = np.argmin(enet_RMSE_test)
+l1s_min = l1s[enet_min_index] 
+enet_min = enet[enet_min_index]
+enet_min_RMSE_test = np.amin(enet_RMSE_test)
+rtools.plot_path(X, y, enet_alphas[enet_min_index], alphas_grid, enet_RMSE_path, enet_coef_path, enet[enet_min_index], model_name, output_dir)
+
+
+#%% Select the significant cluster interactions 
+
+# the optimal alpha from lassocv
+enet_min_alpha = enet_min.alpha_
+# Coefficients for each term
+enet_min_coefs = enet_min.coef_
+# The original intercepts 
+enet_min_intercept = enet_min.intercept_
+enet_min_r2_train = r2_score(y_train, enet_min.predict(X_train))
+
+
+# The indices for non-zero coefficients/significant cluster interactions 
+J_index = np.nonzero(enet_min_coefs)[0]
+# The number of non-zero coefficients/significant cluster interactions  
+n_nonzero = len(J_index)
+# The values of non-zero coefficients/significant cluster interactions  
+J_nonzero = enet_min_coefs[J_index] 
+
+# collect nonzero freature names
+x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
+x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
+
+enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_name, output_dir)
+
+
+# Implement the plot functions on lasso
+enet_min_coef_matrix = make_coef_matrix(x_feature_nonzero, J_nonzero)
+plot_tri_correlation_matrix(enet_min_coef_matrix, model_name, output_dir) 
+
+
+#%%
+'''
+Convert the coefficient to unnormalized form
+'''
+enet_min_coefs_unnormailized = np.zeros_like(enet_min_coefs)
+
+enet_min_coefs_unnormailized[1:] = enet_min_coefs[1:]/sv
+enet_min_coefs_unnormailized[0] = enet_min_coefs[0] - np.sum(mv/sv*enet_min_coefs[1:])
+#%%
+'''
+PLS regression 
+'''
+
+PLS = PLSRegression(n_components = 3, tol=1e-8) #<- N_components tells the model how many sub-components to select
+PLS.fit(X_train,y_train) 
+
+# Access the errors 
+y_predict_test = PLS.predict(X_test)
+y_predict_train = PLS.predict(X_train)
+PLS_r2_train = r2_score(y_train, y_predict_train)
+
+PLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+PLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+
+PLS_RMSE, PLS_r2 = rtools.cal_performance(X, y, PLS)
+
+#%%
+'''
+Second order regression
+'''
+model_name = 'OLS'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)    
+
+OLS = linear_model.LinearRegression(fit_intercept=fit_int_flag)
+OLS.fit(X_train,y_train) 
+OLS_coefs = OLS.coef_
+
+# Access the errors 
+y_predict_test = OLS.predict(X_test)
+y_predict_train = OLS.predict(X_train)
+OLS_r2_train = r2_score(y_train, y_predict_train)
+
+OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+
+OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir)
+
+OLS_coefs_unnormailized = np.zeros_like(OLS_coefs)
+OLS_coefs_unnormailized[1:] = OLS_coefs[1:]/sv
+OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
+
+
+# Implement the plot functions on lasso
+OLS_coef_matrix = make_coef_matrix(x_features_poly, OLS_coefs)
+plot_tri_correlation_matrix(OLS_coef_matrix, model_name, output_dir) 
+
+#%%
+'''
+Compare different regression method
+'''
+
+regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
+#regression_method = [ 'LASSO', 'Elastic Net', 'Ridge', 'OLS']
+n_method = len(regression_method)
+
+means_test = np.array([ USM_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+r2s = np.array([ USM_r2_train,  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
+
+#means_test = np.array([ lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
+#r2s = np.array([  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
+
+
+#x_pos = np.arange(len(regression_method))
+x_pos = np.arange(len(regression_method))
+base_line = 0
+
+opacity = 0.8
+bar_width = 0.25
+fig, ax1 = plt.subplots(figsize=(7,7))
+ax2 = ax1.twinx()
+rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
+                alpha = opacity, color='r',
+                label='Test')
+rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,  
+                alpha = opacity, color='b',
+                label='r2')
+#plt.ylim([-1,18])
+ax1.set_xticks(x_pos+bar_width/2)
+#ax1.set_xticklabels(regression_method, rotation=0)
+ax1.set_xticklabels(regression_method, rotation=0)
+ax1.set_xlabel('Predictive Models')
+#plt.legend(loc= 'best', frameon=False)
+
+ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
+ax1.set_ylim([0, 0.3])
+ax1.tick_params('y', colors='r')
+
+ax2.set_ylabel('Training $R^2$',color = 'b')
+ax2.set_ylim([0.9, 1])
+ax2.tick_params('y', colors='b')
+fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
