@@ -14,7 +14,7 @@ import json
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib
 from scipy.stats import norm
-
+import seaborn as sns
 #matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt 
 #plt.switch_backend('agg')
@@ -244,13 +244,14 @@ def cal_performance(X, y, model):
     
     return RMSE, r2
     
-def parity_plot(yobj, ypred, model_name, output_dir):
+def parity_plot(yobj, ypred, model_name,  output_dir, test_RMSE):
     '''
     Plot the parity plot of y vs ypred
-    return R2 score and MSE for the model
+    return R2 score and MSE for the model for the whole dataset
     colorcode different site types
     '''
-    RMSE = np.sqrt(np.mean((yobj - ypred)**2))
+    sns.set_style("ticks")
+    all_RMSE = np.sqrt(np.mean((yobj - ypred)**2))
     r2 = r2_score(yobj, ypred)
     fig, ax = plt.subplots(figsize=(8, 6))
 
@@ -270,12 +271,12 @@ def parity_plot(yobj, ypred, model_name, output_dir):
 
     ax.set_xlabel('DFT-Calculated ')
     ax.set_ylabel('Model Prediction')
-    plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
+    plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, test_RMSE, r2))
     plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
     
-    return RMSE, r2    
+    return all_RMSE, r2    
 
 def error_distribution(yobj, ypred, model_name, output_dir):
     

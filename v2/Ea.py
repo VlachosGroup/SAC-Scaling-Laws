@@ -64,6 +64,7 @@ Prepare for the features based on the original data
 # Numerical orders
 orders = [1, -1, 0.5, -0.5, 2, -2]
 
+
 def transformers(xv, orders):
 
     '''
@@ -120,6 +121,9 @@ Select nonzero features
 x_features_poly = ['b'] # nonzero feature names in a 2d list
 poly_indices_nonrepeat = [0] # indices in the polynominal order matrix 
 x_plot_feature_names = ['b'] + x_secondary_feature_names
+terms = ['$b$', '$E_c$', r'$E_c^{-1}$', r'$E_c^{0.5}$', r'$E_c^{-0.5}$',  r'$E_c^2$', r'$E_c^{-2}$', r'$ln(E_c)$', r'$E_{bind}$',  r'$E_{bind}^{-1}$', r'$E_{bind}^{0.5}$', r'$E_{bind}^{-0.5}$', r'$E_{bind}^2$', r'$E_{bind}^{-2}$', r'$ln(E_{bind})$']
+x_plot_feature_names = terms
+
 n_features = len(x_plot_feature_names)
 
 
@@ -175,15 +179,15 @@ for fi in x_features_poly:
 '''
 Process X and y, scale
 '''
-X = X_poly[:,poly_indices_nonrepeat]
+X_before_scaling = X_poly[:,poly_indices_nonrepeat]
 y = Ea
-Xscaler = StandardScaler().fit(X[:,1:])
+scaler = StandardScaler().fit(X_before_scaling[:,1:])
 
-sv = Xscaler.scale_
-mv = Xscaler.mean_
+sv = scaler.scale_
+mv = scaler.mean_
 
-
-X[:,1:] = Xscaler.transform(X[:,1:])
+X = X_before_scaling.copy()
+X[:,1:] = scaler.transform(X_before_scaling[:,1:])
 fit_int_flag = False # Not fitting for intercept, as the first coefficient is the intercept
 
 
@@ -192,7 +196,7 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 Cross validation setting
 '''
 # Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test, X_init_train, X_init_test = train_test_split(X, y, X_init, test_size=0.2, random_state = 0 )
+X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = 0 )
                     
                     
 # The alpha grid used for plotting path
@@ -216,7 +220,7 @@ for train_index, test_index in rkf.split(X_train):
 '''   
 # LassoCV to obtain the best alpha, the proper training of Lasso
 '''
-model_name = 'lasso_v2'
+model_name = 'lasso'
 base_dir = os.getcwd()
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
@@ -246,7 +250,7 @@ lasso_RMSE_path, lasso_coef_path = rtools.cal_path(alphas_grid, Lasso, X_cv_trai
 ##lasso_path to get alphas and coef_path, somehow individual CV does not work
 #lasso_alphas, lasso_coef_path, _ = lasso_path(X_train, y_train, alphas = alphas_grid, fit_intercept=fit_int_flag)
 rtools.plot_path(X, y, lasso_alpha, alphas_grid, lasso_RMSE_path, lasso_coef_path, lasso_cv, model_name, output_dir)
-lasso_RMSE, lasso_r2 = rtools.parity_plot(y, lasso_cv.predict(X), model_name, output_dir)
+lasso_RMSE, lasso_r2 = rtools.parity_plot(y, lasso_cv.predict(X), model_name, output_dir, lasso_RMSE_test)
 
 
 # The indices for non-zero coefficients/significant cluster interactions 
@@ -324,7 +328,7 @@ def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
     
     
     # Set up the matplotlib figure
-    fig, ax = plt.subplots(figsize=(20, 20))
+    fig, ax = plt.subplots(figsize=(12, 12))
     # Generate a custom diverging colormap
     cmap = sns.color_palette("RdBu_r", 7) 
     sns.set_style("white")
@@ -332,9 +336,9 @@ def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
                 square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
     ax.tick_params('both', length=0, width=0, which='major')
     ax.set_xticks(np.arange(0,len(x_plot_feature_names))+0.5)
-    ax.set_xticklabels(x_plot_feature_names, rotation = 0)
+    ax.set_xticklabels(x_plot_feature_names, rotation = 45)
     ax.set_yticks(np.arange(0,len(x_plot_feature_names))+0.5)
-    ax.set_yticklabels(x_plot_feature_names, rotation = 360)
+    ax.set_yticklabels(x_plot_feature_names, rotation = 0)
     ax.set_xlabel('Descriptor 1')
     ax.set_ylabel('Descriptor 2')
     fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
@@ -375,7 +379,7 @@ ridge_RMSE_path, ridge_coef_path = rtools.cal_path(alphas_grid_ridge, Ridge, X_c
 rtools.plot_RMSE_path(ridge_alpha, alphas_grid_ridge, ridge_RMSE_path, model_name, output_dir)
 rtools.plot_performance(X, y, ridgeCV,model_name, output_dir)
 
-ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, output_dir)
+ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, output_dir, ridge_RMSE_test)
 #rtools.plot_coef(ridgeCV.coef_, x_plot_feature_names, model_name, output_dir)
 
 ridge_coefs_unnormailized = np.zeros_like(ridge_coefs)
@@ -420,7 +424,7 @@ def l1_enet(ratio):
 
 # The vector of l1 ratio
 l1s = [0.01, 0.05]
-l1s = l1s + list(np.around(np.arange(0.1,1,0.05), decimals= 2))
+l1s = l1s + list(np.around(np.arange(0.1, 1.05, 0.05), decimals= 2))
 #l1s = [.1, .5, .7, .9,  .95,  .99, 1]
 #l1s = [0.95]
 
@@ -507,7 +511,7 @@ J_nonzero = enet_min_coefs[J_index]
 x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
 x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
 
-enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_name, output_dir)
+enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_name, output_dir, enet_min_RMSE_test)
 
 
 # Implement the plot functions on lasso
@@ -561,7 +565,7 @@ OLS_r2_train = r2_score(y_train, y_predict_train)
 OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 
-OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir)
+OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir, OLS_RMSE_test)
 
 OLS_coefs_unnormailized = np.zeros_like(OLS_coefs)
 OLS_coefs_unnormailized[1:] = OLS_coefs[1:]/sv
@@ -572,35 +576,122 @@ OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 OLS_coef_matrix = make_coef_matrix(x_features_poly, OLS_coefs)
 plot_tri_correlation_matrix(OLS_coef_matrix, model_name, output_dir) 
 
+
+#%%
+'''
+Univerisal scaling model, fit Ebind^2/Ec vs Ea
+'''
+model_name = 'USM'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)    
+
+USM = linear_model.LinearRegression(fit_intercept=fit_int_flag)
+term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][0]
+X_USM_test = X_test[:,[0,term_index]]
+X_USM_train = X_train[:,[0,term_index]]
+X_USM = X[:,[0,term_index]]
+USM.fit(X_USM_train,y_train) 
+USM_coefs =  np.zeros_like(ridge_coefs)
+USM_coefs[[0,term_index]] = USM.coef_
+
+# Access the errors 
+y_predict_test = USM.predict(X_USM_test)
+y_predict_train = USM.predict(X_USM_train)
+USM_r2_train = r2_score(y_train, y_predict_train)
+
+
+USM_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+USM_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+USM_RMSE, USM_r2 =rtools.parity_plot(y, USM.predict(X_USM), model_name, output_dir, USM_RMSE_test)
+#rtools.plot_coef(USM_coefs, terms, model_name, output_dir)
+
+# the unnormalized coefficients
+USM_coefs_unnormailized = np.zeros_like(USM_coefs)
+USM_coefs_unnormailized[1:] = USM_coefs[1:]/sv
+USM_coefs_unnormailized[0] = USM_coefs[0] - np.sum(mv/sv*USM_coefs[1:])
+u0= USM_coefs_unnormailized[0] #intercept
+u1 = USM_coefs_unnormailized[term_index] # the coefficient
+
+#%%
+'''
+Genetic programming model
+'''
+model_name = 'GP'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)    
+
+GP_coefs_unnormalized = 0.57
+
+#GP_coefs_normailized = GP_coefs_unnormalized * sv[term_index]
+GP_predict = lambda x: x * GP_coefs_unnormalized 
+
+X_GP_test = X_before_test[:,[term_index]]
+X_GP_train = X_before_train[:,[term_index]]
+X_GP = X_before_scaling[:, [term_index]]
+
+
+# Access the errors 
+y_predict_test = GP_predict(X_GP_test)
+y_predict_train = GP_predict(X_GP_train)
+GP_r2_train = r2_score(y_train, y_predict_train)
+
+
+GP_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
+GP_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+GP_RMSE, GP_r2 =rtools.parity_plot(y, GP_predict(X_GP), model_name, output_dir, GP_RMSE_test)
+#rtools.plot_coef(USM_coefs, terms, model_name, output_dir)
+
+
+
+#%%
+'''
+Compare enet min and USR
+'''
+model_name = 'all_models'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)
+sns.set_style("ticks")
+fig, ax = plt.subplots(figsize=(8, 8))
+
+ax.scatter(y, enet_min.predict(X), label='Elastic Net ($R^2$ =' + str(np.around(enet_min_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 60)
+ax.scatter(y, USM.predict(X_USM), label='USM ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 60)
+ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
+ax.set_xticks(np.arange(0,4,0.5))
+
+ax.set_xlabel('DFT-Calculated (eV)')
+ax.set_ylabel('Model Prediction (eV)')
+#plt.title(r'Method-{}, MSE-{:.2}, $r^2$ -{:.2}'.format(method, MSE, score))
+plt.legend(loc= 'upper left', frameon=False)
+plt.show()
+fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
+
+
+
 #%%
 '''
 Compare different regression method
 '''
 
-regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'OLS']
-#regression_method = [ 'LASSO', 'Elastic Net', 'Ridge', 'OLS']
+regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'GP']
+
 n_method = len(regression_method)
 
-means_test = np.array([ USM_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
-r2s = np.array([ USM_r2_train,  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
+means_test = np.array([ USM_RMSE_test,  lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test,  GP_RMSE_test])
+r2s = np.array([ USM_r2,  lasso_r2, enet_min_r2, ridge_r2,  GP_r2])
 
-#means_test = np.array([ lasso_RMSE_test, enet_min_RMSE_test, ridge_RMSE_test, OLS_RMSE_test])
-#r2s = np.array([  lasso_r2_train, enet_min_r2_train, ridge_r2_train, OLS_r2_train])
-
-
-#x_pos = np.arange(len(regression_method))
 x_pos = np.arange(len(regression_method))
 base_line = 0
 
-opacity = 0.8
+opacity = 0.5
 bar_width = 0.25
-fig, ax1 = plt.subplots(figsize=(7,7))
+sns.set_style("white")
+fig, ax1 = plt.subplots(figsize=(8,8))
 ax2 = ax1.twinx()
 rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
                 alpha = opacity, color='r',
                 label='Test')
 rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,  
-                alpha = opacity, color='b',
+                alpha = opacity, color='royalblue',
                 label='r2')
 #plt.ylim([-1,18])
 ax1.set_xticks(x_pos+bar_width/2)
@@ -610,10 +701,11 @@ ax1.set_xlabel('Predictive Models')
 #plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
-ax1.set_ylim([0, 0.3])
+ax1.set_ylim([0, 0.4])
 ax1.tick_params('y', colors='r')
 
-ax2.set_ylabel('Training $R^2$',color = 'b')
+ax2.set_ylabel('$R^2$',color = 'royalblue')
 ax2.set_ylim([0.9, 1])
-ax2.tick_params('y', colors='b')
-fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
+ax2.tick_params('y', colors='royalblue')
+plt.tight_layout()
+fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
