@@ -52,7 +52,8 @@ read adsoprtion energy and barder charge from a csv file
 '''
 data = pd.read_csv('Ea_data.csv', header = 0)
 
-metal = np.array(data['Metal'])
+metal = np.array(data['metal'])
+support = np.array(data['support'])
 Ec = np.array(data['Ec_DFT'])
 Ebind = np.array(data['Ebind'])
 Ea = np.array(data['Ea'])
@@ -685,7 +686,7 @@ r2s = np.array([ USM_r2,  lasso_r2, enet_min_r2, ridge_r2,  GP_r2])
 x_pos = np.arange(len(regression_method))
 base_line = 0
 
-opacity = 0.5
+opacity = 0.7
 bar_width = 0.25
 sns.set_style("white")
 fig, ax1 = plt.subplots(figsize=(8,8))
@@ -712,3 +713,45 @@ ax2.set_ylim([0.9, 1])
 ax2.tick_params('y', colors='royalblue')
 plt.tight_layout()
 fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
+
+
+#%%
+
+'''
+USM performance plot based on metal and support
+'''
+
+model_name = 'USM'
+output_dir = os.path.join(base_dir, model_name)
+if not os.path.exists(output_dir): os.makedirs(output_dir)    
+
+metal_types = np.unique(metal)
+cm = ['r', 'b', 'purple', 'k', 'g', 'orange', 'pink', 'cyan', 'lightgreen']
+support_types = np.unique(support)
+
+
+def parity_plot_st(yobj, ypred, types, model_name, out_dir):
+    '''
+    Plot the parity plot of y vs ypred
+    return R2 score and MSE for the model
+    colorcode different site types
+    '''
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    for type_i, ci in zip(types, cm):
+        indices = np.where(np.array(metal) == type_i)[0]
+        ax.scatter(yobj[indices],
+                    ypred[indices],
+                    label=type_i,
+                    facecolor = ci, 
+                    alpha = 0.8,
+                    s  = 60)
+    ax.plot([yobj.min(), yobj.max()], [yobj.min(), yobj.max()], 'k--',  lw=2)
+    ax.set_xlabel('DFT-Calculated (eV) ')
+    ax.set_ylabel('Model Prediction (eV)')
+    #plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
+    plt.text(4,6, '$R^2$ = 0.958')
+    plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
+    fig.savefig(os.path.join(output_dir, model_name + '_parity_st.png'))
+
+parity_plot_st(y, USM.predict(X_USM), model_name, output_dir)
