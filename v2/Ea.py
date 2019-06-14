@@ -730,7 +730,7 @@ cm = ['r', 'b', 'purple', 'k', 'g', 'orange', 'pink', 'cyan', 'lightgreen']
 support_types = np.unique(support)
 
 
-def parity_plot_st(yobj, ypred, types, model_name, out_dir):
+def parity_plot_st(y1, y2, types, model_name, out_dir):
     '''
     Plot the parity plot of y vs ypred
     return R2 score and MSE for the model
