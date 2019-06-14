@@ -37,15 +37,17 @@ from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
 import regression_tools as rtools
 
-font = {'size'   : 16}
+font = {'size'   : 20}
 
 matplotlib.rc('font', **font)
 matplotlib.rcParams['axes.linewidth'] = 1.5
 matplotlib.rcParams['xtick.major.size'] = 10
+matplotlib.rcParams['xtick.labelsize'] = 16
+matplotlib.rcParams['ytick.labelsize'] = 16
 matplotlib.rcParams['xtick.major.width'] = 3
 matplotlib.rcParams['ytick.major.size'] = 10
 matplotlib.rcParams['ytick.major.width'] = 3
-
+matplotlib.rcParams['legend.fontsize'] = 14
 
 '''
 read adsoprtion energy and barder charge from a csv file
@@ -616,6 +618,8 @@ USM_coefs_unnormailized[0] = USM_coefs[0] - np.sum(mv/sv*USM_coefs[1:])
 u0= USM_coefs_unnormailized[0] #intercept
 u1 = USM_coefs_unnormailized[term_index] # the coefficient
 
+
+
 #%%
 '''
 Genetic programming model
@@ -657,8 +661,8 @@ if not os.path.exists(output_dir): os.makedirs(output_dir)
 sns.set_style("ticks")
 fig, ax = plt.subplots(figsize=(8, 8))
 
-ax.scatter(y, enet_min.predict(X), label='Elastic Net ($R^2$ =' + str(np.around(enet_min_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 60)
-ax.scatter(y, USM.predict(X_USM), label='USM ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 60)
+ax.scatter(y, enet_min.predict(X), label='Elastic Net ($R^2$ =' + str(np.around(enet_min_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 100)
+ax.scatter(y, USM.predict(X_USM), label='USM ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 100)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
 
@@ -720,38 +724,89 @@ fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
 '''
 USM performance plot based on metal and support
 '''
-
+from matplotlib.pyplot import cm
 model_name = 'USM'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
 metal_types = np.unique(metal)
-cm = ['r', 'b', 'purple', 'k', 'g', 'orange', 'pink', 'cyan', 'lightgreen']
+
 support_types = np.unique(support)
 
+'''
+Based on support
+'''
+category = support.copy()
+types = support_types.copy()
+term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][0]
+x_plot =  X_before_scaling[:,term_index]
+y_plot = y.copy()
+sns.set_style("ticks")
+fig, ax = plt.subplots(figsize=(8, 8))
+color_set = cm.jet(np.linspace(0,1,len(types)))
+for type_i, ci in zip(types, color_set):
+    indices = np.where(np.array(category) == type_i)[0]
+    ax.scatter(x_plot[indices],
+                y_plot[indices],
+                label=type_i,
+                facecolor = ci, 
+                alpha = 0.8,
+                s  = 100)
+ax.plot([x_plot.min(), x_plot.max()], [USM.predict(X_USM).min(), USM.predict(X_USM).max()], 'k--',  lw=2)
+ax.set_xlabel('$E_{bind}^2/E_c$ ' + '(eV)')
+ax.set_ylabel('$E_a$' +'(eV)')
 
-def parity_plot_st(y1, y2, types, model_name, out_dir):
-    '''
-    Plot the parity plot of y vs ypred
-    return R2 score and MSE for the model
-    colorcode different site types
-    '''
+plt.text(2,0, '$E_a$ = ' + str(np.around(u1, decimals = 3)) + '$E_{bind}^2/E_c$' + str(np.around(u0, decimals = 3)))
+plt.text(4,0.4, '$R^2$ = ' + str(np.around(USM_r2, decimals = 3)) )
 
-    fig, ax = plt.subplots(figsize=(7, 7))
-    for type_i, ci in zip(types, cm):
-        indices = np.where(np.array(metal) == type_i)[0]
-        ax.scatter(yobj[indices],
-                    ypred[indices],
-                    label=type_i,
-                    facecolor = ci, 
-                    alpha = 0.8,
-                    s  = 60)
-    ax.plot([yobj.min(), yobj.max()], [yobj.min(), yobj.max()], 'k--',  lw=2)
-    ax.set_xlabel('DFT-Calculated (eV) ')
-    ax.set_ylabel('Model Prediction (eV)')
-    #plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
-    plt.text(4,6, '$R^2$ = 0.958')
-    plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
-    fig.savefig(os.path.join(output_dir, model_name + '_parity_st.png'))
+plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
+#plt.legend(loc= 'best', frameon=False)
 
-parity_plot_st(y, USM.predict(X_USM), model_name, output_dir)
+fig.savefig(os.path.join(output_dir, model_name + '_parity_support.png'))
+
+
+#%%
+'''
+Based on metal
+'''
+category = metal.copy()
+types = metal_types.copy()
+term_index_bind = np.where(np.array(x_features_poly_combined) == 'Ebind_1')[0][0]
+term_index_c = np.where(np.array(x_features_poly_combined) == 'Ec_1')[0][0]
+
+x_plot_bind =  X_before_scaling[:,term_index_bind]
+x_plot_c =  X_before_scaling[:,term_index_c]
+y_plot = y.copy()
+mesh = 10
+
+USM_function = lambda x, y: x**2/y * u1 + u0 
+
+sns.set_style("ticks")
+fig, ax = plt.subplots(figsize=(8, 8))
+color_set = cm.jet(np.linspace(0,1,len(types)))
+
+
+for type_i, ci in zip(types, color_set):
+    indices = np.where(np.array(category) == type_i)[0]
+    ax.scatter(x_plot_bind[indices],
+                y_plot[indices],
+                label=type_i+ ' ('+ '$R^2$ = ' + str(np.around(r2_score(USM.predict(X_USM)[indices], y_plot[indices]), decimals = 3)) + ')',
+                facecolor = ci, 
+                alpha = 0.8,
+                s  = 100)
+    x_line = np.linspace(x_plot_bind[indices].min(),  x_plot_bind[indices].max(), mesh)
+    y_line = USM_function(x_line, x_plot_c[indices][0])
+    ax.plot(x_line, y_line, linestyle = '-', color = ci,  lw=2)
+    #plt.text(0.5, 3.5 - pi , '$R^2$ = ' + str(np.around(r2_score(USM.predict(X_USM)[indices], y_plot[indices]), decimals = 3)), color=ci)
+    
+    
+ax.set_xlabel('$E_{bind}$ ' + '(eV)')
+ax.set_ylabel('$E_a$' +'(eV)')
+#plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
+
+
+plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
+#plt.legend(loc= 'lower right', frameon=False)
+
+fig.savefig(os.path.join(output_dir, model_name + '_parity_metal.png'))
+
