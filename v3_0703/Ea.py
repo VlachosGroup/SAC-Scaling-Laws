@@ -41,13 +41,13 @@ font = {'size'   : 20}
 
 matplotlib.rc('font', **font)
 matplotlib.rcParams['axes.linewidth'] = 1.5
-matplotlib.rcParams['xtick.major.size'] = 10
+matplotlib.rcParams['xtick.major.size'] = 12
 matplotlib.rcParams['xtick.labelsize'] = 16
 matplotlib.rcParams['ytick.labelsize'] = 16
 matplotlib.rcParams['xtick.major.width'] = 3
-matplotlib.rcParams['ytick.major.size'] = 10
+matplotlib.rcParams['ytick.major.size'] = 12
 matplotlib.rcParams['ytick.major.width'] = 3
-matplotlib.rcParams['legend.fontsize'] = 14
+matplotlib.rcParams['legend.fontsize'] = 16
 
 '''
 read adsoprtion energy and barder charge from a csv file
@@ -60,7 +60,7 @@ Ec = np.array(data['Ec'])
 Ebind = np.array(data['Ebind'])
 Ea = np.array(data['Ea'])
 
-
+#%%
 '''
 Prepare for the features based on the original data
 '''
@@ -198,15 +198,17 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 '''
 Cross validation setting
 '''
+# Set random state here
+rs = 0
 # Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = 0 )
+X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = rs)
                     
                     
 # The alpha grid used for plotting path
 alphas_grid = np.logspace(0, -3, 20)
 
 # Cross-validation scheme                                  
-rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state = 0)
+rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state =rs)
 
 
 # Explicitly take out the train/test set
@@ -228,7 +230,7 @@ base_dir = os.getcwd()
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-lasso_cv  = LassoCV(cv = rkf,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=0)
+lasso_cv  = LassoCV(cv = rkf,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=rs)
 lasso_cv.fit(X_train, y_train)
 
 # the optimal alpha from lassocv
@@ -409,7 +411,7 @@ def l1_enet(ratio):
     input l1 ratio and return the model, non zero coefficients and cv scores
     training elastic net properly
     '''
-    enet_cv  = ElasticNetCV(cv = rkf, l1_ratio=ratio,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=5)
+    enet_cv  = ElasticNetCV(cv = rkf, l1_ratio=ratio,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state= rs)
     enet_cv.fit(X_train, y_train)
     
     # the optimal alpha
@@ -475,7 +477,7 @@ ax1.tick_params('y', colors='b')
 
 ax2 = ax1.twinx()
 ax2.plot(l1_ratio_v, enet_n_v, 'r--')
-ax2.set_ylabel('Number of Nonzero Coefficients', color='r')
+ax2.set_ylabel('# Nonzero Coefficients', color='r')
 ax2.tick_params('y', colors='r')
 
 fig.tight_layout()
@@ -628,7 +630,7 @@ model_name = 'GP'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-GP_coefs_unnormalized = 0.57
+GP_coefs_unnormalized = 0.566
 
 #GP_coefs_normailized = GP_coefs_unnormalized * sv[term_index]
 GP_predict = lambda x: x * GP_coefs_unnormalized 
@@ -659,9 +661,9 @@ model_name = 'all_models'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)
 sns.set_style("ticks")
-fig, ax = plt.subplots(figsize=(8, 8))
+fig, ax = plt.subplots(figsize=(6, 6))
 
-ax.scatter(y, enet_min.predict(X), label='Elastic Net ($R^2$ =' + str(np.around(enet_min_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 100)
+ax.scatter(y, lasso_cv.predict(X), label='LASSO ($R^2$ =' + str(np.around(lasso_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 100)
 ax.scatter(y, USM.predict(X_USM), label='USM ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 100)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
@@ -680,7 +682,7 @@ fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 Compare different regression method
 '''
 
-regression_method = [ 'USM',  'LASSO', 'Elastic Net', 'Ridge', 'GP']
+regression_method = [ 'USM',  'LASSO', 'Enet', 'Ridge', 'GP']
 
 n_method = len(regression_method)
 
@@ -693,7 +695,7 @@ base_line = 0
 opacity = 0.7
 bar_width = 0.25
 sns.set_style("white")
-fig, ax1 = plt.subplots(figsize=(8,8))
+fig, ax1 = plt.subplots(figsize=(6,6))
 ax2 = ax1.twinx()
 rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
                 alpha = opacity, color='r',
@@ -709,7 +711,7 @@ ax1.set_xlabel('Predictive Models')
 #plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
-ax1.set_ylim([0, 0.4])
+ax1.set_ylim([0, 0.3])
 ax1.tick_params('y', colors='r')
 
 ax2.set_ylabel('$R^2$',color = 'royalblue')
@@ -742,7 +744,7 @@ term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][
 x_plot =  X_before_scaling[:,term_index]
 y_plot = y.copy()
 sns.set_style("ticks")
-fig, ax = plt.subplots(figsize=(8, 8))
+fig, ax = plt.subplots(figsize=(6, 6))
 color_set = cm.jet(np.linspace(0,1,len(types)))
 for type_i, ci in zip(types, color_set):
     indices = np.where(np.array(category) == type_i)[0]
@@ -756,7 +758,7 @@ ax.plot([x_plot.min(), x_plot.max()], [USM.predict(X_USM).min(), USM.predict(X_U
 ax.set_xlabel('$E_{bind}^2/E_c$ ' + '(eV)')
 ax.set_ylabel('$E_a$' +'(eV)')
 
-plt.text(2,0, '$E_a$ = ' + str(np.around(u1, decimals = 3)) + '$E_{bind}^2/E_c$' + str(np.around(u0, decimals = 3)))
+plt.text(1.6,0, '$E_a$ = ' + str(np.around(u1, decimals = 3)) + '$E_{bind}^2/E_c$ ' + str(np.around(u0, decimals = 3)))
 plt.text(4,0.4, '$R^2$ = ' + str(np.around(USM_r2, decimals = 3)) )
 
 plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
@@ -782,7 +784,7 @@ mesh = 10
 USM_function = lambda x, y: x**2/y * u1 + u0 
 
 sns.set_style("ticks")
-fig, ax = plt.subplots(figsize=(8, 8))
+fig, ax = plt.subplots(figsize=(6, 6))
 color_set = cm.jet(np.linspace(0,1,len(types)))
 
 
