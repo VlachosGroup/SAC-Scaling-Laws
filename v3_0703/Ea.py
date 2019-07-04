@@ -9,7 +9,7 @@ Created on Thu May 30 19:53:18 2019
 Test SAC_stability
 Standize 
 Introducing more features
-Use experimental values for Ec cohesive
+Use DFT values for Ec cohesive
 '''
 
 import os
@@ -18,6 +18,8 @@ import pickle
 import matplotlib
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import cm
+ 
 import numpy as np
 
 import pandas as pd
@@ -726,7 +728,7 @@ fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
 '''
 USM performance plot based on metal and support
 '''
-from matplotlib.pyplot import cm
+
 model_name = 'USM'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
