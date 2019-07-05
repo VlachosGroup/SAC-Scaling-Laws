@@ -102,7 +102,7 @@ Based on support
 
 support_types = np.unique(support)
 parity_type_plot(Ebind, Ea, '$E_{bind}$', support_types, support)
-parity_type_plot(Ec, Ea, '$E_{bind}$', support_types, support)
+parity_type_plot(Ec, Ea, '$E_{c}$', support_types, support)
 parity_type_plot(Ebind/Ec, Ea,'$E_{bind}/E_c$',  support_types, support)
 #fig, ax = plt.subplots(figsize=(6, 6))
 #color_set = cm.jet(np.linspace(0,1,len(types)))
