@@ -474,12 +474,12 @@ fig, ax1 = plt.subplots()
 ax1.plot(l1_ratio_v, enet_RMSE_test_v, 'bo-')
 ax1.set_xlabel('L1 Ratio')
 # Make the y-axis label, ticks and tick labels match the line color.
-ax1.set_ylabel('RMSE/cluster(ev)', color='b')
+ax1.set_ylabel('RMSE (ev)', color='b')
 ax1.tick_params('y', colors='b')
 
 ax2 = ax1.twinx()
 ax2.plot(l1_ratio_v, enet_n_v, 'r--')
-ax2.set_ylabel('# Nonzero Coefficients', color='r')
+ax2.set_ylabel('# Descriptors', color='r')
 ax2.tick_params('y', colors='r')
 
 fig.tight_layout()
@@ -591,7 +591,7 @@ plot_tri_correlation_matrix(OLS_coef_matrix, model_name, output_dir)
 '''
 Univerisal scaling model, fit Ebind^2/Ec vs Ea
 '''
-model_name = 'USM'
+model_name = 'DSL'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
@@ -632,7 +632,7 @@ model_name = 'GP'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-GP_coefs_unnormalized = 0.566
+GP_coefs_unnormalized = 0.565
 
 #GP_coefs_normailized = GP_coefs_unnormalized * sv[term_index]
 GP_predict = lambda x: x * GP_coefs_unnormalized 
@@ -666,7 +666,7 @@ sns.set_style("ticks")
 fig, ax = plt.subplots(figsize=(6, 6))
 
 ax.scatter(y, lasso_cv.predict(X), label='LASSO ($R^2$ =' + str(np.around(lasso_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 100)
-ax.scatter(y, USM.predict(X_USM), label='USM ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 100)
+ax.scatter(y, USM.predict(X_USM), label='DSL ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 100)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
 
@@ -684,7 +684,7 @@ fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
 Compare different regression method
 '''
 
-regression_method = [ 'USM',  'LASSO', 'Enet', 'Ridge', 'GP']
+regression_method = [ 'DSL',  'LASSO', 'Enet', 'Ridge', 'GP']
 
 n_method = len(regression_method)
 
