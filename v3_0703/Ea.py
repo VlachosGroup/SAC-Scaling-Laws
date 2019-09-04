@@ -50,6 +50,7 @@ matplotlib.rcParams['xtick.major.width'] = 3
 matplotlib.rcParams['ytick.major.size'] = 12
 matplotlib.rcParams['ytick.major.width'] = 3
 matplotlib.rcParams['legend.fontsize'] = 16
+matplotlib.rcParams['figure.dpi'] = 300.
 
 '''
 read adsoprtion energy and barder charge from a csv file
