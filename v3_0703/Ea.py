@@ -127,7 +127,9 @@ Select nonzero features
 x_features_poly = ['b'] # nonzero feature names in a 2d list
 poly_indices_nonrepeat = [0] # indices in the polynominal order matrix 
 x_plot_feature_names = ['b'] + x_secondary_feature_names
-terms = ['$b$', '$E_c$', r'$E_c^{-1}$', r'$E_c^{0.5}$', r'$E_c^{-0.5}$',  r'$E_c^2$', r'$E_c^{-2}$', r'$ln(E_c)$', r'$E_{bind}$',  r'$E_{bind}^{-1}$', r'$E_{bind}^{0.5}$', r'$E_{bind}^{-0.5}$', r'$E_{bind}^2$', r'$E_{bind}^{-2}$', r'$ln(E_{bind})$']
+terms = ['1', r'$\rm E_c$', r'$\rm E_c^{-1}$', r'$\rm E_c^{0.5}$', r'$\rm E_c^{-0.5}$',  r'$\rm E_c^2$', r'$\rm E_c^{-2}$', r'$\rm ln(E_c)$', r'$\rm E_{bind}$',
+         r'$\rm E_{bind}^{-1}$', r'$\rm E_{bind}^{0.5}$', r'$\rm E_{bind}^{-0.5}$', r'$\rm E_{bind}^2$', r'$\rm E_{bind}^{-2}$', 
+         r'$\rm ln(E_{bind})$']
 x_plot_feature_names = terms
 
 n_features = len(x_plot_feature_names)
@@ -666,8 +668,8 @@ if not os.path.exists(output_dir): os.makedirs(output_dir)
 sns.set_style("ticks")
 fig, ax = plt.subplots(figsize=(6, 6))
 
-ax.scatter(y, lasso_cv.predict(X), label='LASSO ($R^2$ =' + str(np.around(lasso_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 100)
-ax.scatter(y, USM.predict(X_USM), label='DSL ($R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 100)
+ax.scatter(y, lasso_cv.predict(X), label='LASSO (' + r'$\rm R^2$ =' + str(np.around(lasso_r2, decimals = 3)) +')', facecolors='r', alpha = 0.7, s  = 100)
+ax.scatter(y, USM.predict(X_USM), label='DSL ('+ r'$\rm R^2$ ='+str(np.around(USM_r2, decimals = 3)) +')', facecolors='royalblue', marker="o", alpha = 0.7, s  = 100)
 ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=2)
 ax.set_xticks(np.arange(0,4,0.5))
 
@@ -717,7 +719,7 @@ ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
 ax1.set_ylim([0, 0.3])
 ax1.tick_params('y', colors='r')
 
-ax2.set_ylabel('$R^2$',color = 'royalblue')
+ax2.set_ylabel(r'$\rm R^2$',color = 'royalblue')
 ax2.set_ylim([0.9, 1])
 ax2.tick_params('y', colors='royalblue')
 plt.tight_layout()
@@ -758,11 +760,11 @@ for type_i, ci in zip(types, color_set):
                 alpha = 0.8,
                 s  = 100)
 ax.plot([x_plot.min(), x_plot.max()], [USM.predict(X_USM).min(), USM.predict(X_USM).max()], 'k--',  lw=2)
-ax.set_xlabel('$E_{bind}^2/E_c$ ' + '(eV)')
-ax.set_ylabel('$E_a$' +'(eV)')
+ax.set_xlabel(r'$\rm E_{bind}^2/E_c$ ' + '(eV)')
+ax.set_ylabel(r'$\rm E_a$' +'(eV)')
 
-plt.text(1.6,0, '$E_a$ = ' + str(np.around(u1, decimals = 3)) + '$E_{bind}^2/E_c$ ' + str(np.around(u0, decimals = 3)))
-plt.text(4,0.4, '$R^2$ = ' + str(np.around(USM_r2, decimals = 3)) )
+plt.text(1.6,0, r'$\rm E_a$ = ' + str(np.around(u1, decimals = 3)) + r'$\rm E_{bind}^2/E_c$ ' + str(np.around(u0, decimals = 3)))
+plt.text(4,0.4, r'$\rm R^2$ = ' + str(np.around(USM_r2, decimals = 3)) )
 
 plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
 #plt.legend(loc= 'best', frameon=False)
@@ -795,7 +797,7 @@ for type_i, ci in zip(types, color_set):
     indices = np.where(np.array(category) == type_i)[0]
     ax.scatter(x_plot_bind[indices],
                 y_plot[indices],
-                label=type_i+ ' ('+ '$R^2$ = ' + str(np.around(r2_score(USM.predict(X_USM)[indices], y_plot[indices]), decimals = 3)) + ')',
+                label=type_i+ ' ('+ r'$\rm R^2$ = ' + str(np.around(r2_score(USM.predict(X_USM)[indices], y_plot[indices]), decimals = 3)) + ')',
                 facecolor = ci, 
                 alpha = 0.8,
                 s  = 100)
@@ -805,8 +807,8 @@ for type_i, ci in zip(types, color_set):
     #plt.text(0.5, 3.5 - pi , '$R^2$ = ' + str(np.around(r2_score(USM.predict(X_USM)[indices], y_plot[indices]), decimals = 3)), color=ci)
     
     
-ax.set_xlabel('$E_{bind}$ ' + '(eV)')
-ax.set_ylabel('$E_a$' +'(eV)')
+ax.set_xlabel(r'$\rm E_{bind}$ ' + '(eV)')
+ax.set_ylabel(r'$\rm E_a$' +'(eV)')
 #plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
 
 
