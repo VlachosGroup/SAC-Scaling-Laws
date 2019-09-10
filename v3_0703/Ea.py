@@ -745,17 +745,20 @@ Based on support
 '''
 category = support.copy()
 types = support_types.copy()
+
+legend_labels = [r'$\rm CeO_{2}(100)$', r'$\rm CeO_{2}(111)$', 'Graphene', 'MgO(100)', r'$\rm MoS_{2}$', r'$\rm SrTiO_{3}$',
+         'Steps of ' + r'$\rm CeO_{2}$', r'$\rm TiO_{2}(110)$', 'ZnO(100)']
 term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][0]
 x_plot =  X_before_scaling[:,term_index]
 y_plot = y.copy()
 sns.set_style("ticks")
 fig, ax = plt.subplots(figsize=(6, 6))
 color_set = cm.jet(np.linspace(0,1,len(types)))
-for type_i, ci in zip(types, color_set):
+for type_i, ci, label_i in zip(types, color_set, legend_labels):
     indices = np.where(np.array(category) == type_i)[0]
     ax.scatter(x_plot[indices],
                 y_plot[indices],
-                label=type_i,
+                label=label_i,
                 facecolor = ci, 
                 alpha = 0.8,
                 s  = 100)
