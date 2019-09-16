@@ -124,7 +124,7 @@ orders_m = poly.powers_
 '''
 Select nonzero features
 '''
-x_features_poly = ['b'] # nonzero feature names in a 2d list
+x_features_poly = ['1'] # nonzero feature names in a 2d list
 poly_indices_nonrepeat = [0] # indices in the polynominal order matrix 
 x_plot_feature_names = ['b'] + x_secondary_feature_names
 terms = ['1', r'$\rm E_c$', r'$\rm E_c^{-1}$', r'$\rm E_c^{0.5}$', r'$\rm E_c^{-0.5}$',  r'$\rm E_c^2$', r'$\rm E_c^{-2}$', r'$\rm ln(E_c)$', r'$\rm E_{bind}$',
@@ -183,7 +183,16 @@ for fi in x_features_poly:
         x_features_poly_combined.append(fi_combined)
         
     else: x_features_poly_combined.append(fi[0])
-        
+#%%
+'''
+Additional Screening, take out repeated features 
+'''
+repeated_indices = [16, 18, 27, 29, 40, 49, 83, 85, 87, 89, 93, 95]
+poly_indices_nonrepeat = [poly_indices_nonrepeat[i] for i in range(0, len(poly_indices_nonrepeat)) if i not in repeated_indices]
+x_features_poly_combined = [x_features_poly_combined[i] for i in range(0, len(x_features_poly_combined)) if i not in repeated_indices]
+x_features_poly = [x_features_poly[i] for i in range(0, len(x_features_poly)) if i not in repeated_indices]
+
+#%%        
 '''
 Process X and y, scale
 '''
@@ -261,7 +270,7 @@ lasso_RMSE_path, lasso_coef_path = rtools.cal_path(alphas_grid, Lasso, X_cv_trai
 #lasso_alphas, lasso_coef_path, _ = lasso_path(X_train, y_train, alphas = alphas_grid, fit_intercept=fit_int_flag)
 rtools.plot_path(X, y, lasso_alpha, alphas_grid, lasso_RMSE_path, lasso_coef_path, lasso_cv, model_name, output_dir)
 lasso_RMSE, lasso_r2 = rtools.parity_plot(y, lasso_cv.predict(X), model_name, output_dir, lasso_RMSE_test)
-
+lasso_prediction = lasso_cv.predict(X)
 
 # The indices for non-zero coefficients/significant cluster interactions 
 J_index = np.nonzero(lasso_coefs)[0]
@@ -298,7 +307,7 @@ def make_coef_matrix(x_features, Js):
         
         if len(feature_names) == 1:
             
-            if feature_names == 'b':
+            if feature_names == '1':
                 coef_matrix[0,0] = Ji
                 
             else:
@@ -335,6 +344,21 @@ def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
     mask[9,8] = True
     mask[11,10] = True
     mask[13,12] = True
+    
+    #new masks
+    mask[4,1] = True
+    mask[3,2] = True
+    mask[6,1] = True
+    mask[5,2] = True
+    mask[6,3] = True
+    mask[5,4] = True
+    
+    mask[11,8] = True
+    mask[13,8] = True
+    mask[10,9] = True
+    mask[12,9] = True
+    mask[12,11] = True
+    mask[13,10] = True
     
     
     # Set up the matplotlib figure
@@ -402,6 +426,7 @@ ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 # Implement the plot functions on lasso
 ridge_coef_matrix = make_coef_matrix(x_features_poly, ridge_coefs)
 plot_tri_correlation_matrix(ridge_coef_matrix, model_name, output_dir) 
+ridge_prediction = ridgeCV.predict(X)
 
 
 
@@ -530,6 +555,7 @@ enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_na
 # Implement the plot functions on lasso
 enet_min_coef_matrix = make_coef_matrix(x_feature_nonzero, J_nonzero)
 plot_tri_correlation_matrix(enet_min_coef_matrix, model_name, output_dir) 
+enet_min_prediction = enet_min.predict(X)
 
 
 #%%
@@ -540,23 +566,7 @@ enet_min_coefs_unnormailized = np.zeros_like(enet_min_coefs)
 
 enet_min_coefs_unnormailized[1:] = enet_min_coefs[1:]/sv
 enet_min_coefs_unnormailized[0] = enet_min_coefs[0] - np.sum(mv/sv*enet_min_coefs[1:])
-#%%
-'''
-PLS regression 
-'''
 
-PLS = PLSRegression(n_components = 3, tol=1e-8) #<- N_components tells the model how many sub-components to select
-PLS.fit(X_train,y_train) 
-
-# Access the errors 
-y_predict_test = PLS.predict(X_test)
-y_predict_train = PLS.predict(X_train)
-PLS_r2_train = r2_score(y_train, y_predict_train)
-
-PLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
-PLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
-
-PLS_RMSE, PLS_r2 = rtools.cal_performance(X, y, PLS)
 
 #%%
 '''
@@ -588,6 +598,7 @@ OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 # Implement the plot functions on lasso
 OLS_coef_matrix = make_coef_matrix(x_features_poly, OLS_coefs)
 plot_tri_correlation_matrix(OLS_coef_matrix, model_name, output_dir) 
+OLS_prediction = OLS.predict(X)
 
 
 #%%
@@ -624,7 +635,7 @@ USM_coefs_unnormailized[1:] = USM_coefs[1:]/sv
 USM_coefs_unnormailized[0] = USM_coefs[0] - np.sum(mv/sv*USM_coefs[1:])
 u0= USM_coefs_unnormailized[0] #intercept
 u1 = USM_coefs_unnormailized[term_index] # the coefficient
-
+USM_prediction = USM.predict(X_USM)
 
 
 #%%
@@ -655,7 +666,7 @@ GP_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 GP_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 GP_RMSE, GP_r2 =rtools.parity_plot(y, GP_predict(X_GP), model_name, output_dir, GP_RMSE_test)
 #rtools.plot_coef(USM_coefs, terms, model_name, output_dir)
-
+GP_prediction =  GP_predict(X_GP)
 
 
 #%%
@@ -746,7 +757,7 @@ Based on support
 category = support.copy()
 types = support_types.copy()
 
-legend_labels = [r'$\rm CeO_{2}(100)$', r'$\rm CeO_{2}(111)$', 'Graphene', 'MgO(100)', r'$\rm MoS_{2}$', r'$\rm SrTiO_{3}$',
+legend_labels = [r'$\rm CeO_{2}(100)$', r'$\rm CeO_{2}(111)$', 'Graphene', 'MgO(100)', '2H-'+r'$\rm MoS_{2}(0001)$', r'$\rm SrTiO_{3}(100)$',
          'Steps of ' + r'$\rm CeO_{2}$', r'$\rm TiO_{2}(110)$', 'ZnO(100)']
 term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][0]
 x_plot =  X_before_scaling[:,term_index]

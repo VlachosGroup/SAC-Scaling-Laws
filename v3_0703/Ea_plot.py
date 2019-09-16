@@ -77,33 +77,34 @@ output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
 
-def parity_type_plot(y1, y2, y2_name, types, category):
-    fig, ax = plt.subplots(figsize=(5, 5))
+def parity_type_plot(y1, y2, y2_label, variable_name,  types, category, legend_labels):
+    fig, ax = plt.subplots(figsize=(6, 6))
     color_set = cm.jet(np.linspace(0,1,len(types)))
-    for type_i, ci in zip(types, color_set):
+    for type_i, ci, label_i in zip(types, color_set, legend_labels):
         indices = np.where(np.array(category) == type_i)[0]
         ax.scatter(y1[indices],
                         y2[indices],
-                        label=type_i,
+                        label=label_i,
                         facecolor = ci, 
                         alpha = 0.8,
                         s  = 100)
     #ax.plot([y1.min(), y1.max()], [y1.min(), y1.max()], 'k--',  lw=2)
-    ax.set_ylabel('$E_{a}$ (eV) ')
-    ax.set_xlabel(y2_name + ' (eV)')
+    ax.set_ylabel(r'$\rm E_{a}$ (eV) ')
+    ax.set_xlabel(y2_label + ' (eV)')
     pr = pearsonr(y1, y2)[0]
     plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
-    plt.text(min(y1), max(y2) - 0.1, '$r_{pearson}$ = ' + str(np.around(pr, decimals = 3))) 
-    fig.savefig(os.path.join(output_dir, model_name + '_parity_support_'+ y2_name+ '.png'))
+    plt.text(min(y1), max(y2) - 0.1, r'$\rm r_{pearson}$ = ' + str(np.around(pr, decimals = 3))) 
+    fig.savefig(os.path.join(output_dir, model_name + '_parity_support_'+ variable_name + '.png'))
 
 '''
 Based on support
 '''
-
+support_labels = [r'$\rm CeO_{2}(100)$', r'$\rm CeO_{2}(111)$', 'Graphene', 'MgO(100)', '2H-'+r'$\rm MoS_{2}(0001)$', r'$\rm SrTiO_{3}(100)$',
+         'Steps of ' + r'$\rm CeO_{2}$', r'$\rm TiO_{2}(110)$', 'ZnO(100)']
 support_types = np.unique(support)
-parity_type_plot(Ebind, Ea, '$E_{bind}$', support_types, support)
-parity_type_plot(Ec, Ea, '$E_{c}$', support_types, support)
-parity_type_plot(Ebind/Ec, Ea,'$E_{bind}/E_c$',  support_types, support)
+parity_type_plot(Ebind, Ea, r'$\rm E_{bind}$', 'Ebind',support_types, support, support_labels)
+parity_type_plot(Ec, Ea, r'$\rm E_{c}$', 'Ec', support_types, support, support_labels)
+parity_type_plot(Ebind/Ec, Ea,  r'$\rm E_{bind}/E_c$', 'Ebind_Ec', support_types, support, support_labels)
 #fig, ax = plt.subplots(figsize=(6, 6))
 #color_set = cm.jet(np.linspace(0,1,len(types)))
 #for type_i, ci in zip(types, color_set):
