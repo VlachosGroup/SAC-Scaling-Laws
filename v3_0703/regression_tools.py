@@ -113,7 +113,7 @@ def plot_RMSE_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd(
     
     plt.legend(frameon=False,loc='best')
     plt.xlabel(r'$-log10(\lambda)$')
-    plt.ylabel("RMSE/cluster(ev)")    
+    plt.ylabel("RMSE (eV)")    
     plt.tight_layout()
    
     fig.savefig(os.path.join(output_dir, model_name  + '_a_vs_cv.png'))
@@ -147,7 +147,7 @@ def plot_ridge_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd
     
     plt.legend(frameon=False,loc='best')
     plt.xlabel(r'$-log10(\lambda)$')
-    plt.ylabel("RMSE/cluster(ev)")    
+    plt.ylabel("RMSE (eV)")    
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name +'_a_vs_cv.png'))
     #plt.show()   
