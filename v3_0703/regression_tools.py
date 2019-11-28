@@ -2,12 +2,13 @@
 """
 Created on Sat Apr 13 21:09:01 2019
 
-@author: yifan
+@author: Yifan Wang (wangyf@udel.edu)
 """
 
 '''
-regression plot tools
+Utility functions to make regression plots
 '''
+
 import os
 import numpy as np
 import json
@@ -20,9 +21,6 @@ import matplotlib.pyplot as plt
 #plt.switch_backend('agg')
 #font = {'family' : 'normal', 'size'   : 12}
 #matplotlib.rc('font', **font)
-
-
-#%% User define functions 
 
 
 
@@ -52,7 +50,7 @@ def cal_path(alphas, model, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_in
         test_scores = np.zeros(len(alphas))
         coefs_i = np.zeros(len(alphas))
         
-        print('{} % done'.format(100*(j+1)/len(X_cv_train)))
+        #print('{} % done'.format(100*(j+1)/len(X_cv_train)))
         
         for i, ai in enumerate(alphas):
             
@@ -302,3 +300,89 @@ def plot_coef(coefs, model_name,  output_dir, terms = None):
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name + '_coef_distribution.png'))
     
+#%% Plot coefficients function
+def make_coef_matrix(x_features, Js, n_features, x_secondary_feature_names):
+    
+    '''
+    Put the coefficient matrix back
+    '''
+    
+    coef_matrix = np.zeros((n_features, n_features))
+    
+    for xi, feature_names in enumerate(x_features):
+    
+        Ji = Js[xi]
+        
+        if len(feature_names) == 1:
+            
+            if feature_names == '1':
+                coef_matrix[0,0] = Ji
+                
+            else:
+                # row number
+                ri = np.where(np.array(x_secondary_feature_names) == feature_names)[0][0] + 1
+                # column number
+                ci = 0
+                coef_matrix[ri,ci] = Ji
+                
+        if len(feature_names) == 2:
+            # row number
+            ri = np.where(np.array(x_secondary_feature_names) == feature_names[1])[0][0] + 1
+            ci = np.where(np.array(x_secondary_feature_names) == feature_names[0])[0][0] + 1
+            
+            coef_matrix[ri, ci] = Ji
+            
+    return coef_matrix
+
+
+def plot_tri_correlation_matrix(coef_matrix, output_dir, x_plot_feature_names, model_name):
+    
+    '''
+    Plot the correlation matrix in a lower trianglar fashion
+    '''
+    corr = coef_matrix.copy()
+    
+    # create mask, true for white, false to show the value
+    mask = np.zeros_like(corr)
+    mask[np.triu_indices_from(mask)] = True
+    mask[0,0] = False
+    mask[2,1] = True
+    mask[4,3] = True
+    mask[6,5] = True
+    mask[9,8] = True
+    mask[11,10] = True
+    mask[13,12] = True
+    
+    #new masks
+    mask[4,1] = True
+    mask[3,2] = True
+    mask[6,1] = True
+    mask[5,2] = True
+    mask[6,3] = True
+    mask[5,4] = True
+    
+    mask[11,8] = True
+    mask[13,8] = True
+    mask[10,9] = True
+    mask[12,9] = True
+    mask[12,11] = True
+    mask[13,10] = True
+    
+    
+    # Set up the matplotlib figure
+    fig, ax = plt.subplots(figsize=(12, 12))
+    # Generate a custom diverging colormap
+    cmap = sns.color_palette("RdBu_r", 7) 
+    sns.set_style("white")
+    sns.heatmap(corr, mask = mask, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
+                square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
+    for _, spine in ax.spines.items():
+        spine.set_visible(True)
+    ax.tick_params('both', length=0, width=0, which='major')
+    ax.set_xticks(np.arange(0,len(x_plot_feature_names))+0.5)
+    ax.set_xticklabels(x_plot_feature_names, rotation = 45)
+    ax.set_yticks(np.arange(0,len(x_plot_feature_names))+0.5)
+    ax.set_yticklabels(x_plot_feature_names, rotation = 0)
+    ax.set_xlabel('Descriptor 1')
+    ax.set_ylabel('Descriptor 2')
+    fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))

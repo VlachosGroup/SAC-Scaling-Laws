@@ -215,14 +215,14 @@ Cross validation setting
 # Set random state here
 random_state = 0
 # Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = rs)
+X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = random_state)
                     
                     
 # The alpha grid used for plotting path
 alphas_grid = np.logspace(0, -3, 20)
 
 # Cross-validation scheme                                  
-rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state =rs)
+rkf = RepeatedKFold(n_splits = 10, n_repeats = 10 , random_state = random_state)
 
 
 # Explicitly take out the train/test set
@@ -244,7 +244,7 @@ base_dir = os.getcwd()
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-lasso_cv  = LassoCV(cv = rkf,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=rs)
+lasso_cv  = LassoCV(cv = rkf,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=random_state)
 lasso_cv.fit(X_train, y_train)
 
 # the optimal alpha from lassocv
@@ -292,96 +292,9 @@ lasso_coefs_unnormailized[1:] = lasso_coefs[1:]/sv
 lasso_coefs_unnormailized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 
-#%% Plot coefficients function
-def make_coef_matrix(x_features, Js):
-    
-    '''
-    Put the coefficient matrix back
-    '''
-    
-    coef_matrix = np.zeros((n_features, n_features))
-    
-    for xi, feature_names in enumerate(x_features):
-    
-        Ji = Js[xi]
-        
-        if len(feature_names) == 1:
-            
-            if feature_names == '1':
-                coef_matrix[0,0] = Ji
-                
-            else:
-                # row number
-                ri = np.where(np.array(x_secondary_feature_names) == feature_names)[0][0] + 1
-                # column number
-                ci = 0
-                coef_matrix[ri,ci] = Ji
-                
-        if len(feature_names) == 2:
-            # row number
-            ri = np.where(np.array(x_secondary_feature_names) == feature_names[1])[0][0] + 1
-            ci = np.where(np.array(x_secondary_feature_names) == feature_names[0])[0][0] + 1
-            
-            coef_matrix[ri, ci] = Ji
-            
-    return coef_matrix
-
-
-def plot_tri_correlation_matrix(coef_matrix, model_name, output_dir):
-    
-    '''
-    Plot the correlation matrix in a lower trianglar fashion
-    '''
-    corr = coef_matrix.copy()
-    
-    # create mask, true for white, false to show the value
-    mask = np.zeros_like(corr)
-    mask[np.triu_indices_from(mask)] = True
-    mask[0,0] = False
-    mask[2,1] = True
-    mask[4,3] = True
-    mask[6,5] = True
-    mask[9,8] = True
-    mask[11,10] = True
-    mask[13,12] = True
-    
-    #new masks
-    mask[4,1] = True
-    mask[3,2] = True
-    mask[6,1] = True
-    mask[5,2] = True
-    mask[6,3] = True
-    mask[5,4] = True
-    
-    mask[11,8] = True
-    mask[13,8] = True
-    mask[10,9] = True
-    mask[12,9] = True
-    mask[12,11] = True
-    mask[13,10] = True
-    
-    
-    # Set up the matplotlib figure
-    fig, ax = plt.subplots(figsize=(12, 12))
-    # Generate a custom diverging colormap
-    cmap = sns.color_palette("RdBu_r", 7) 
-    sns.set_style("white")
-    sns.heatmap(corr, mask = mask, cmap=cmap, vmin = -0.5, vmax=0.5, center=0,
-                square=True, linewidths=1.5, cbar_kws={"shrink": 0.7})
-    for _, spine in ax.spines.items():
-        spine.set_visible(True)
-    ax.tick_params('both', length=0, width=0, which='major')
-    ax.set_xticks(np.arange(0,len(x_plot_feature_names))+0.5)
-    ax.set_xticklabels(x_plot_feature_names, rotation = 45)
-    ax.set_yticks(np.arange(0,len(x_plot_feature_names))+0.5)
-    ax.set_yticklabels(x_plot_feature_names, rotation = 0)
-    ax.set_xlabel('Descriptor 1')
-    ax.set_ylabel('Descriptor 2')
-    fig.savefig(os.path.join(output_dir, model_name + '_coef_heatmap.png'))
-
 # Implement the plot functions on lasso
-lasso_coef_matrix = make_coef_matrix(x_feature_nonzero, J_nonzero)
-plot_tri_correlation_matrix(lasso_coef_matrix, model_name, output_dir)    
+lasso_coef_matrix = rtools.make_coef_matrix(x_feature_nonzero, J_nonzero)
+rtools.plot_tri_correlation_matrix(lasso_coef_matrix, model_name, output_dir)    
     
 
 #%% Ridge regression
@@ -424,8 +337,8 @@ ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 
 # Implement the plot functions on lasso
-ridge_coef_matrix = make_coef_matrix(x_features_poly, ridge_coefs)
-plot_tri_correlation_matrix(ridge_coef_matrix, model_name, output_dir) 
+ridge_coef_matrix = rtools.make_coef_matrix(x_features_poly, ridge_coefs)
+rtools.plot_tri_correlation_matrix(ridge_coef_matrix, model_name, output_dir) 
 ridge_prediction = ridgeCV.predict(X)
 
 
@@ -553,8 +466,8 @@ enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_na
 
 
 # Implement the plot functions on lasso
-enet_min_coef_matrix = make_coef_matrix(x_feature_nonzero, J_nonzero)
-plot_tri_correlation_matrix(enet_min_coef_matrix, model_name, output_dir) 
+enet_min_coef_matrix = rtools.make_coef_matrix(x_feature_nonzero, J_nonzero)
+rtools.plot_tri_correlation_matrix(enet_min_coef_matrix, model_name, output_dir) 
 enet_min_prediction = enet_min.predict(X)
 
 
@@ -596,8 +509,8 @@ OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 
 
 # Implement the plot functions on lasso
-OLS_coef_matrix = make_coef_matrix(x_features_poly, OLS_coefs)
-plot_tri_correlation_matrix(OLS_coef_matrix, model_name, output_dir) 
+OLS_coef_matrix = rtools.make_coef_matrix(x_features_poly, OLS_coefs)
+rtools.plot_tri_correlation_matrix(OLS_coef_matrix, model_name, output_dir) 
 OLS_prediction = OLS.predict(X)
 
 
