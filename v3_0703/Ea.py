@@ -213,7 +213,7 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 Cross validation setting
 '''
 # Set random state here
-rs = 0
+random_state = 0
 # Train test split, save 10% of data point to the test set
 X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = rs)
                     
