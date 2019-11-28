@@ -292,15 +292,13 @@ lasso_coefs_unnormailized[1:] = lasso_coefs[1:]/sv
 lasso_coefs_unnormailized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 
-# Implement the plot functions on lasso
-lasso_coef_matrix = rtools.make_coef_matrix(x_feature_nonzero, J_nonzero)
-rtools.plot_tri_correlation_matrix(lasso_coef_matrix, model_name, output_dir)    
-    
+# Plot coefficients matrix
+lasso_coef_matrix = rtools.make_coef_matrix(x_feature_nonzero, J_nonzero, n_features, x_secondary_feature_names)
+rtools.plot_tri_correlation_matrix(lasso_coef_matrix, output_dir, x_plot_feature_names, model_name)
 
+    
 #%% Ridge regression
-'''
-# Ridge regression
-'''
+
 '''
 # RidgeCV to obtain the best alpha, the proper training of ridge
 '''

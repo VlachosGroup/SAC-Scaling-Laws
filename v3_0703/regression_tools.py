@@ -129,7 +129,7 @@ def plot_path(X, y, alpha, alphas, RMSE_path, coef_path, model, model_name, outp
     '''
     #make performance plot
     '''
-    plot_performance(X, y, model, model_name, output_dir)
+    #plot_performance(X, y, model, model_name, output_dir)
     
 
 
