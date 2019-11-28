@@ -711,7 +711,7 @@ base_line = 0
 opacity = 0.7
 bar_width = 0.25
 sns.set_style("white")
-fig, ax1 = plt.subplots(figsize=(6,6))
+fig, ax1 = plt.subplots(figsize=(7,6))
 ax2 = ax1.twinx()
 rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
                 alpha = opacity, color='r',

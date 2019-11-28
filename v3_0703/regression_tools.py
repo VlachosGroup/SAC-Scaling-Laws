@@ -261,14 +261,6 @@ def parity_plot(yobj, ypred, model_name,  output_dir, test_RMSE):
                 s  = 60)
     ax.plot([yobj.min(), yobj.max()], [yobj.min(), yobj.max()], 'k--', lw=2)
     
-#    X_cluster = np.transpose(np.vstack((yobj, ypred)))
-#    gmm = GaussianMixture(n_components= 1, random_state = 0)
-#    plot_gmm(gmm, X_cluster)
-#    
-#    kmeans = KMeans(n_clusters = 1, random_state=0)
-#    plot_kmeans(kmeans, X_cluster)
-
-
     ax.set_xlabel('DFT-Calculated ')
     ax.set_ylabel('Model Prediction')
     plt.title(r'RMSE-{:.2}, $r^2$ -{:.2}'.format(test_RMSE, r2))
