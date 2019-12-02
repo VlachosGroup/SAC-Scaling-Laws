@@ -571,9 +571,8 @@ model_name = 'GP'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
+# GP model is already trained and its functional form is as follow:
 GP_coefs_unnormalized = 0.565
-
-#GP_coefs_normailized = GP_coefs_unnormalized * sv[term_index]
 GP_predict = lambda x: x * GP_coefs_unnormalized 
 
 term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][0]
