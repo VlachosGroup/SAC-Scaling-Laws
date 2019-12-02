@@ -11,16 +11,12 @@ Utility functions to make regression plots
 
 import os
 import numpy as np
-import json
 from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib
 from scipy.stats import norm
 import seaborn as sns
 #matplotlib.use('Agg') # Must be before importing matplotlib.pyplot or pylab!
 import matplotlib.pyplot as plt 
-#plt.switch_backend('agg')
-#font = {'family' : 'normal', 'size'   : 12}
-#matplotlib.rc('font', **font)
+
 
 
 
@@ -30,9 +26,7 @@ Plot the regression results
       
 def predict_y(x, intercept, J_nonzero):
     
-    # x is the column in pi matrix or the pi matrix 
     y = np.dot(x, J_nonzero) + intercept
-    # the results should be the same as y = lasso_cv.predict(X)
     return y
 
 
@@ -49,9 +43,7 @@ def cal_path(alphas, model, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_in
         
         test_scores = np.zeros(len(alphas))
         coefs_i = np.zeros(len(alphas))
-        
-        #print('{} % done'.format(100*(j+1)/len(X_cv_train)))
-        
+                
         for i, ai in enumerate(alphas):
             
             estimator = model(alpha = ai,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state = 0)
@@ -88,11 +80,8 @@ def plot_coef_path(alpha, alphas, coef_path, model_name, output_dir = os.getcwd(
     plt.xlabel(r'$-log10(\lambda)$')
     plt.ylabel("Number of Nonzero Coefficients ")    
     plt.tight_layout()
-    
 
     fig.savefig(os.path.join(output_dir, model_name + '_a_vs_n.png'))
-    #plt.show() 
-
 
 
 def plot_RMSE_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd()):
@@ -115,7 +104,7 @@ def plot_RMSE_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd(
     plt.tight_layout()
    
     fig.savefig(os.path.join(output_dir, model_name  + '_a_vs_cv.png'))
-    #plt.show()   
+
        
 def plot_path(X, y, alpha, alphas, RMSE_path, coef_path, model, model_name, output_dir = os.getcwd()):
     
@@ -127,7 +116,7 @@ def plot_path(X, y, alpha, alphas, RMSE_path, coef_path, model, model_name, outp
     plot_RMSE_path(alpha, alphas, RMSE_path, model_name, output_dir)
     
     '''
-    #make performance plot
+    #make performance plot - optional
     '''
     #plot_performance(X, y, model, model_name, output_dir)
     
@@ -137,7 +126,6 @@ def plot_ridge_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd
     
     fig = plt.figure(figsize=(6, 6))
     
-    #plt.plot(-np.log10(alphas), np.log10(RMSE_path), ':', linewidth= 0.8)
     plt.plot(-np.log10(alphas), np.mean(RMSE_path, axis = 1), 
              label='Average across the folds', linewidth=2)  
     plt.axvline(-np.log10(alpha), linestyle='--' , color='r', linewidth=3,
@@ -148,7 +136,6 @@ def plot_ridge_path(alpha, alphas, RMSE_path, model_name, output_dir = os.getcwd
     plt.ylabel("RMSE (eV)")    
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name +'_a_vs_cv.png'))
-    #plt.show()   
 
     
     
@@ -173,14 +160,13 @@ def plot_performance(X, y, model, model_name, output_dir = os.getcwd()):
         np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
     ]
     
-    # now plot both limits against eachother
+    #  plot both limits against eachother
     ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
     ax.set_xlim(lims)
     ax.set_ylim(lims)
 
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))
-    #plt.show()
     
     '''
     #plot error plot
@@ -199,14 +185,12 @@ def plot_performance(X, y, model, model_name, output_dir = os.getcwd()):
         np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
     ]
     
-    # now plot both limits against eachother
+    #  plot both limits against eachother
     ax.plot(lims, np.zeros(len(lims)), 'k--', alpha=0.75, zorder=0)
     ax.set_xlim(lims)
-    #ax.set_ylim(lims)
 
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name +'_error.png'))
-    #plt.show()
     
     '''
     #plot error plot per atom
@@ -225,14 +209,12 @@ def plot_performance(X, y, model, model_name, output_dir = os.getcwd()):
         np.max([ax.get_xlim(), ax.get_ylim()]),  # max of both axes
     ]
     
-    # now plot both limits against eachother
+    #  plot both limits against eachother
     ax.plot(lims, np.zeros(len(lims)), 'k--', alpha=0.75, zorder=0)
     ax.set_xlim(lims)
-    #ax.set_ylim(lims)
 
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name + '_error_atom.png'))
-    #plt.show()
 
 def cal_performance(X, y, model): 
     

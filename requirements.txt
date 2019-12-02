@@ -1,4 +1,6 @@
 numpy==1.16.*
 matplotlib==3.*
-pandas
+scipy==1.2.*
+pandas==0.24.*
 sklearn==1.16.*
+seaborn==0.9.*

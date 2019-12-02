@@ -21,7 +21,6 @@
 # %%
 #%% Import all necessary libraries 
 import os
-import pickle
 
 import matplotlib
 import matplotlib.patches as mpatches
