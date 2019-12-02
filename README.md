@@ -3,7 +3,7 @@ The notebooks contain the workflow of training scaling relationships based on ph
 
 The scaling relationships are useful for fast prediction of desired properties and catalyst material screening, saving computing time by not doing quantumn calculations. 
 
-![toc](images/table_of_content.PNG)
+![toc](images/table_of_content.png)
 
 ## Developers
 - Yifan Wang (wangyf@udel.edu)
@@ -17,7 +17,7 @@ The dataset includes properties of the single-atoms on the support calculated fr
 - 9 types of supports 
 - 11 types of metals: Ag, Au, Co, Cu, Fe, Ir, Ni, Pd, Pt, Rh, Ru
 - 99 sample points
-![metal_support](images/metal_support.PNG)
+![metal_support](images/metal_support.png)
 
 ## Machine Learning Methods Used:
 - LASSO regression
