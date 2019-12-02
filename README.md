@@ -1,5 +1,6 @@
 # Training Scaling Relationships for Single-atom Catalysts
 The notebooks contain the workflow of training scaling relationships based on physical descriptors (features obtained from density functional theory calculations) using various machine learning methods.
+The scaling relationships are useful for fast prediction of desired properties and catalyst material screening, saving computing time by not doing quantumn calculations. 
 
 ## Developers
 - Yifan Wang (wangyf@udel.edu)
@@ -24,12 +25,12 @@ Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A
 - GP: files for training genetic programming models
 
 ## Dependencies 
-- Numpy: Used for vector and matrix operations
-- Matplotlib: Used for plotting
-- Scipy: Used for linear algebra calculations
-- Pandas: Used to import data from Excel files
-- Sklearn: Used for training machine learning models
-- Seaborn: Used for plotting
-- Gplearn: Used for training genetic programming models 
+- [Numpy](https://numpy.org/): Used for vector and matrix operations
+- [Matplotlib](https://matplotlib.org/): Used for plotting
+- [Scipy](https://www.scipy.org/): Used for linear algebra calculations
+- [Pandas](https://pandas.pydata.org/): Used to import data from Excel files
+- [Sklearn](https://scikit-learn.org/stable/): Used for training machine learning models
+- [Seaborn](https://seaborn.pydata.org/): Used for plotting
+- [Gplearn](https://gplearn.readthedocs.io/en/stable/): Used for training genetic programming models 
 
 
