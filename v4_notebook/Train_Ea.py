@@ -35,7 +35,7 @@
 # 
 
 # %%
-#%% Import all libraries 
+#%% Import all necessary libraries 
 
 import os
 import pickle
@@ -139,14 +139,13 @@ for xi in x_secondary_feature_names_2d:
 
 
 '''
-Apply to the data
+Transform the primary features to the secondary features
 ''' 
 Ec_features = transformers(Ec, orders)    
 Ebind_features = transformers(Ebind, orders)   
 
-
+# Combine two sets of features
 X_init = np.concatenate((Ec_features, Ebind_features),axis = 1) 
-
 
 poly = PolynomialFeatures(2, interaction_only=True)
 X_poly = poly.fit_transform(X_init)
@@ -247,7 +246,7 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 
 # Set random state here
 random_state = 0
-# Train test split, save 10% of data point to the test set
+# Train test split, save 20% of data point to the test set
 X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = random_state)
                     
                     
@@ -269,7 +268,6 @@ for train_index, test_index in rkf.split(X_train):
 
 # %% [markdown]
 # ### Step 5 - Train ML models
-# 
 # %% [markdown]
 # #### LASSO Regression<a name="lasso"></a>
 # 
@@ -303,12 +301,10 @@ lasso_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 lasso_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 lasso_r2_train = r2_score(y_train, y_predict_train)
 
-
-##Use alpha grid prepare for lassopath
+# Use alpha grid prepare for lassopath
 lasso_RMSE_path, lasso_coef_path = rtools.cal_path(alphas_grid, Lasso, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)
-##lasso_path to get alphas and coef_path, somehow individual CV does not work
-#lasso_alphas, lasso_coef_path, _ = lasso_path(X_train, y_train, alphas = alphas_grid, fit_intercept=fit_int_flag)
 rtools.plot_path(X, y, lasso_alpha, alphas_grid, lasso_RMSE_path, lasso_coef_path, lasso_cv, model_name, output_dir)
+# Plot the parity plot 
 lasso_RMSE, lasso_r2 = rtools.parity_plot(y, lasso_cv.predict(X), model_name, output_dir, lasso_RMSE_test)
 lasso_prediction = lasso_cv.predict(X)
 
@@ -322,7 +318,6 @@ J_nonzero = lasso_coefs[J_index]
 # collect nonzero freature names
 x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
 x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
-#rtools.plot_coef(J_nonzero, model_name, output_dir, x_feature_nonzero_combined)
 
 '''
 Convert the coefficient to unnormalized form
@@ -368,10 +363,8 @@ ridge_r2_train = r2_score(y_train, y_predict_train)
 # plot the rigde path
 ridge_RMSE_path, ridge_coef_path = rtools.cal_path(alphas_grid_ridge, Ridge, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)
 rtools.plot_RMSE_path(ridge_alpha, alphas_grid_ridge, ridge_RMSE_path, model_name, output_dir)
-#rtools.plot_performance(X, y, ridgeCV,model_name, output_dir)
-
+# Plot the parity plot 
 ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, output_dir, ridge_RMSE_test)
-#rtools.plot_coef(ridgeCV.coef_, x_plot_feature_names, model_name, output_dir)
 
 '''
 Convert the coefficient to unnormalized form
@@ -421,6 +414,9 @@ def l1_enet(ratio):
 
     return enet_cv, enet_alpha, n_nonzero, enet_RMSE_test, enet_RMSE_train
 
+'''
+# Tune the l1 ratio by a grid search from 0 to 1
+'''
 # The vector of l1 ratio
 l1s = [0.01, 0.05]
 l1s = l1s + list(np.around(np.arange(0.1, 1.05, 0.05), decimals= 2))
@@ -431,8 +427,6 @@ enet_alphas = []
 enet_n  = []
 enet_RMSE_test = []
 enet_RMSE_train = []
-enet_RMSE_test_atom = []
-enet_RMSE_train_atom = []
 
 print('Training Progress: \n')
 for i, l1i in enumerate(l1s):
@@ -478,9 +472,8 @@ fig.savefig(os.path.join(output_dir, 'elastic_net.png'))
 
 # enet_path to get alphas and coef_path
 '''
-#Use alpha grid prepare for enet_path when RMSE is mininal 
+# Use alpha grid prepare for enet_path when RMSE is mininal 
 '''
-#enet_alphas_095, enet_coef_path_095, _ = enet_path(X_train, y_train, l1_ratio=0.95, alphas = alphas_grid, fit_intercept=fit_int_flag)
 enet_RMSE_path, enet_coef_path = rtools.cal_path(alphas_grid, ElasticNet, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)    
 enet_min_index = np.argmin(enet_RMSE_test)
 l1s_min = l1s[enet_min_index] 
@@ -510,7 +503,7 @@ J_nonzero = enet_min_coefs[J_index]
 # collect nonzero freature names
 x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
 x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
-
+# Plot the parity plot
 enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_name, output_dir, enet_min_RMSE_test)
 
 
@@ -548,7 +541,7 @@ OLS_r2_train = r2_score(y_train, y_predict_train)
 
 OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
-
+# Plot the parity plot
 OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir, OLS_RMSE_test)
 
 
@@ -597,8 +590,8 @@ GP_r2_train = r2_score(y_train, y_predict_train)
 
 GP_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 GP_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+# Plot the parity plot
 GP_RMSE, GP_r2 =rtools.parity_plot(y, GP_predict(X_GP), model_name, output_dir, GP_RMSE_test)
-#rtools.plot_coef(USM_coefs, terms, model_name, output_dir)
 GP_prediction =  GP_predict(X_GP)
 
 # %% [markdown]
@@ -629,8 +622,8 @@ DSL_r2_train = r2_score(y_train, y_predict_train)
 
 DSL_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 DSL_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
+# Plot the parity plot
 DSL_RMSE, DSL_r2 =rtools.parity_plot(y, DSL.predict(X_DSL), model_name, output_dir, DSL_RMSE_test)
-#rtools.plot_coef(USM_coefs, terms, model_name, output_dir)
 
 # the unnormalized coefficients
 DSL_coefs_unnormailized = np.zeros_like(DSL_coefs)
@@ -665,18 +658,16 @@ bar_width = 0.25
 sns.set_style("white")
 fig, ax1 = plt.subplots(figsize=(7,6))
 ax2 = ax1.twinx()
-rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, #yerr=std_test,  
+rects2 = ax1.bar(x_pos, means_test - base_line, bar_width, # testing RMSE
                 alpha = opacity, color='r',
                 label='Test')
-rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width, #yerr=std_test,  
+rects3 = ax2.bar(x_pos+bar_width, r2s - base_line, bar_width,  #R2
                 alpha = opacity, color='royalblue',
                 label='r2')
-#plt.ylim([-1,18])
+
 ax1.set_xticks(x_pos+bar_width/2)
-#ax1.set_xticklabels(regression_method, rotation=0)
 ax1.set_xticklabels(regression_method, rotation=0)
 ax1.set_xlabel('Predictive Models')
-#plt.legend(loc= 'best', frameon=False)
 
 ax1.set_ylabel('Testing RMSE (eV)', color = 'r')
 ax1.set_ylim([0, 0.3])
@@ -693,7 +684,7 @@ fig.savefig(os.path.join(output_dir, model_name + '_performance.png'))
 # 
 
 # %%
-#%% USM performance plot based on metal and support
+#%% DSL performance plot based on metal and support
  
 metal_types = np.unique(metal)
 
@@ -729,7 +720,6 @@ plt.text(1.6,0, r'$\rm E_a$ = ' + str(np.around(u1, decimals = 3)) + r'$\rm E_{b
 plt.text(4,0.4, r'$\rm R^2$ = ' + str(np.around(DSL_r2, decimals = 3)) )
 
 plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
-#plt.legend(loc= 'best', frameon=False)
 
 fig.savefig(os.path.join(output_dir, model_name + '_parity_support.png'))
 
@@ -768,16 +758,13 @@ for type_i, ci in zip(types, color_set):
     x_line = np.linspace(x_plot_bind[indices].min(),  x_plot_bind[indices].max(), mesh)
     y_line = DSL_function(x_line, x_plot_c[indices][0])
     ax.plot(x_line, y_line, linestyle = '-', color = ci,  lw=2)
-    #plt.text(0.5, 3.5 - pi , '$R^2$ = ' + str(np.around(r2_score(USM.predict(X_USM)[indices], y_plot[indices]), decimals = 3)), color=ci)
     
     
 ax.set_xlabel(r'$\rm E_{bind}$ ' + '(eV)')
 ax.set_ylabel(r'$\rm E_a$' +'(eV)')
-#plt.title(r'{}, RMSE-{:.2}, $r^2$ -{:.2}'.format(model_name, RMSE, r2))
 
 
 plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
-#plt.legend(loc= 'lower right', frameon=False)
 
 fig.savefig(os.path.join(output_dir, model_name + '_parity_metal.png'))
 

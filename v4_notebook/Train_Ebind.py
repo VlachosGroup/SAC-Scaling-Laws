@@ -3,7 +3,7 @@
 # 
 # Author: Yifan Wang [(wangyf@udel.edu)](wangyf@udel.edu)
 # 
-# Predict Ebinding based on descriptors (features) 'Ebulk', 'Evac', 'delta X' , 'CN', 'bond angle' (values from DFT calculations)
+# Predict $E_{bind}$ of single-atom metal on support based on descriptors (features) 'Ebulk', 'Evac', 'delta X' , 'CN', 'bond angle' (values from DFT calculations)
 # 
 # The form of the scaling law is obtained from various supervised machine learning (ML) methods and the traing procedure is shown below. The ML methods used include:
 # 
@@ -14,6 +14,8 @@
 # - [Elastic net](#enet)
 # 
 # - [Ordinary Least Square (OLS) regression](#OLS)
+# 
+# The LASSO model is selected based on the lowest testing RMSE
 # 
 
 # %%
@@ -71,7 +73,7 @@ descriptors  = ['Ec', 'Evac', 'delta X' , 'CN', 'angle']
 
 Ebind = np.array(data['Ebind'])
 
-# load the descriptor values 
+# load the physical descriptor values 
 Ec = np.array(data['Ec'])
 Evac = np.array(data['Evac'])
 deltaX = np.array(data['delta X'])
@@ -125,7 +127,7 @@ for xi in x_secondary_feature_names_2d:
 
 
 '''
-Apply to the data
+Transform the primary features into the secondary features
 ''' 
 Ec_features = transformers(Ec, orders)    
 Evac_features = transformers(Evac, orders)   
@@ -133,8 +135,7 @@ deltaX_features = transformers(deltaX, orders)
 CN_features = transformers(CN, orders)   
 angle_features = transformers(angle, orders)   
 
-
-#%%
+# Combine all features
 X_init = np.concatenate((Ec_features, Evac_features, deltaX_features, CN_features,angle_features ),axis = 1) 
 
 
@@ -170,9 +171,9 @@ fit_int_flag = False # Not fitting for intercept, as the first coefficient is th
 #%% Cross validation setting
 
 # Set random state here
-rs = 0
-# Train test split, save 10% of data point to the test set
-X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = rs)
+random_state = 0
+# Train test split, save 20% of data point to the test set
+X_train, X_test, y_train, y_test, X_before_train, X_before_test = train_test_split(X, y, X_before_scaling, test_size=0.2, random_state = random_state)
                     
                     
 # The alpha grid used for plotting path
@@ -207,7 +208,7 @@ base_dir = os.getcwd()
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-lasso_cv  = LassoCV(cv = rkf,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=rs)
+lasso_cv  = LassoCV(cv = rkf,  max_iter = 1e7, tol = 0.001, fit_intercept=fit_int_flag, random_state=random_state)
 lasso_cv.fit(X_train, y_train)
 
 # the optimal alpha from lassocv
@@ -229,9 +230,8 @@ lasso_r2_train = r2_score(y_train, y_predict_train)
 
 ##Use alpha grid prepare for lassopath
 lasso_RMSE_path, lasso_coef_path = rtools.cal_path(alphas_grid, Lasso, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)
-##lasso_path to get alphas and coef_path, somehow individual CV does not work
-#lasso_alphas, lasso_coef_path, _ = lasso_path(X_train, y_train, alphas = alphas_grid, fit_intercept=fit_int_flag)
 rtools.plot_path(X, y, lasso_alpha, alphas_grid, lasso_RMSE_path, lasso_coef_path, lasso_cv, model_name, output_dir)
+# Plot parity plot
 lasso_RMSE, lasso_r2 = rtools.parity_plot(y, lasso_cv.predict(X), model_name, output_dir, lasso_RMSE_test)
 
 
@@ -242,10 +242,6 @@ n_nonzero = len(J_index)
 # The values of non-zero coefficients/significant cluster interactions  
 J_nonzero = lasso_coefs[J_index] 
 
-## collect nonzero freature names
-#x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
-#x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
-#rtools.plot_coef(J_nonzero, model_name, output_dir, x_feature_nonzero_combined)
 
 '''
 Convert the coefficient to unnormalized form
@@ -288,10 +284,10 @@ ridge_r2_train = r2_score(y_train, y_predict_train)
 # plot the rigde path
 ridge_RMSE_path, ridge_coef_path = rtools.cal_path(alphas_grid_ridge, Ridge, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)
 rtools.plot_RMSE_path(ridge_alpha, alphas_grid_ridge, ridge_RMSE_path, model_name, output_dir)
-
+# plot the parity plot
 ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, output_dir, ridge_RMSE_test)
-#rtools.plot_coef(ridgeCV.coef_, x_plot_feature_names, model_name, output_dir)
 
+# Unnormalized coefficients
 ridge_coefs_unnormailized = np.zeros_like(ridge_coefs)
 ridge_coefs_unnormailized[1:] = ridge_coefs[1:]/sv
 ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
@@ -332,11 +328,14 @@ def l1_enet(ratio):
 
     return enet_cv, enet_alpha, n_nonzero, enet_RMSE_test, enet_RMSE_train
 
+'''
+# Tune the l1 ratio by a grid search from 0 to 1
+'''
+
 # The vector of l1 ratio
 l1s = [0.01, 0.05]
 l1s = l1s + list(np.around(np.arange(0.1, 1.05, 0.05), decimals= 2))
-#l1s = [.1, .5, .7, .9,  .95,  .99, 1]
-#l1s = [0.95]
+
 
 enet = []
 enet_alphas = []
@@ -393,7 +392,6 @@ fig.savefig(os.path.join(output_dir, 'elastic_net.png'))
 '''
 #Use alpha grid prepare for enet_path when RMSE is mininal 
 '''
-#enet_alphas_095, enet_coef_path_095, _ = enet_path(X_train, y_train, l1_ratio=0.95, alphas = alphas_grid, fit_intercept=fit_int_flag)
 enet_RMSE_path, enet_coef_path = rtools.cal_path(alphas_grid, ElasticNet, X_cv_train, y_cv_train, X_cv_test, y_cv_test, fit_int_flag)    
 enet_min_index = np.argmin(enet_RMSE_test)
 l1s_min = l1s[enet_min_index] 
@@ -419,11 +417,7 @@ J_index = np.nonzero(enet_min_coefs)[0]
 n_nonzero = len(J_index)
 # The values of non-zero coefficients/significant cluster interactions  
 J_nonzero = enet_min_coefs[J_index] 
-
-# collect nonzero freature names
-#x_feature_nonzero_combined = [x_features_poly_combined[pi] for pi in J_index]
-#x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
-
+# Plot the parity plot
 enet_min_RMSE, enet_min_r2 = rtools.parity_plot(y, enet_min.predict(X), model_name, output_dir, enet_min_RMSE_test)
 
 '''
@@ -455,7 +449,7 @@ OLS_r2_train = r2_score(y_train, y_predict_train)
 
 OLS_RMSE_test = np.sqrt(mean_squared_error(y_test, y_predict_test))
 OLS_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
-
+# Plot the parity plot
 OLS_RMSE, OLS_r2 = rtools.parity_plot(y, OLS.predict(X), model_name, output_dir, OLS_RMSE_test)
 
 OLS_coefs_unnormailized = np.zeros_like(OLS_coefs)
@@ -463,7 +457,7 @@ OLS_coefs_unnormailized[1:] = OLS_coefs[1:]/sv
 OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 
 # %% [markdown]
-# #### Evaluate the performance for LASSO model 
+# #### Evaluate the performance of LASSO model 
 
 # %%
 #%% LASSO model performance
