@@ -10,8 +10,11 @@ The scaling relationships are useful for fast prediction of desired properties a
 - Ebind, the binding energy of single-metal atom on a support
 - Ea, the activation barrier for metal atom diffusion 
 
-## Related Publication 
-Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A. W.; Vlachos, D. G.; Hensen, E. J. M. Stability of Heterogeneous Single-Atom Catalysts : A Scaling Law Mapping Thermodynamics to Kinetics (2019). (Submitted)
+## Dataset
+The dataset includes properties of the single-atoms on the support calculated from density functional theory in Ea_data.csv
+- 9 types of supports 
+- 11 types of metals: Ag, Au, Co, Cu, Fe, Ir, Ni, Pd, Pt, Rh, Ru
+- 99 sample points
 
 ## Machine Learning Methods Used:
 - LASSO regression
@@ -33,5 +36,9 @@ Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A
 - [Sklearn](https://scikit-learn.org/stable/): Used for training machine learning models
 - [Seaborn](https://seaborn.pydata.org/): Used for plotting
 - [Gplearn](https://gplearn.readthedocs.io/en/stable/): Used for training genetic programming models 
+
+## Related Publication 
+Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A. W.; Vlachos, D. G.; Hensen, E. J. M. Stability of Heterogeneous Single-Atom Catalysts : A Scaling Law Mapping Thermodynamics to Kinetics (2019). (Submitted)
+
 
 
