@@ -5,8 +5,8 @@ The notebooks contain the workflow of training scaling relationships based on ph
 - Yifan Wang (wangyf@udel.edu)
 
 ## Scaling Relationships are developed for 
-- $E_{bind}$, the binding energy of single-metal atom on a support
-- $E_a$, the activation barrier for metal atom diffusion 
+- $Ebind, the binding energy of single-metal atom on a support
+- Ea, the activation barrier for metal atom diffusion 
 
 ## Related Publication 
 Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A. W.; Vlachos, D. G.; Hensen, E. J. M. Stability of Heterogeneous Single-Atom Catalysts : A Scaling Law Mapping Thermodynamics to Kinetics. (Submitted)
@@ -26,4 +26,7 @@ Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A
 - Sklearn
 - Seaborn
 
-
+# Getting Started 
+- Train_Ea provides the training for Ea
+- Train_Ebind provides the training for Ebind
+- GP provides the test file for GP training
