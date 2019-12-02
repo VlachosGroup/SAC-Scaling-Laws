@@ -1,5 +1,6 @@
 # Training Scaling Relationships for Single-atom Catalysts
 The notebooks contain the workflow of training scaling relationships based on physical descriptors (features obtained from density functional theory calculations) using various machine learning methods.
+
 The scaling relationships are useful for fast prediction of desired properties and catalyst material screening, saving computing time by not doing quantumn calculations. 
 
 ## Developers
@@ -10,7 +11,7 @@ The scaling relationships are useful for fast prediction of desired properties a
 - Ea, the activation barrier for metal atom diffusion 
 
 ## Related Publication 
-Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A. W.; Vlachos, D. G.; Hensen, E. J. M. Stability of Heterogeneous Single-Atom Catalysts : A Scaling Law Mapping Thermodynamics to Kinetics (2019).(Submitted)
+Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A. W.; Vlachos, D. G.; Hensen, E. J. M. Stability of Heterogeneous Single-Atom Catalysts : A Scaling Law Mapping Thermodynamics to Kinetics (2019). (Submitted)
 
 ## Machine Learning Methods Used:
 - LASSO regression
@@ -19,7 +20,7 @@ Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A
 - Ordinary Least Square (OLS) regression
 - Genetic Programming (GP) based on sybomlic regression
 
-# Getting Started 
+## Getting Started 
 - Train_Ea: the training for Ea
 - Train_Ebind: the training for Ebind
 - GP: files for training genetic programming models
