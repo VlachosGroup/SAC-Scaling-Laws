@@ -17,6 +17,7 @@ The dataset includes properties of the single-atoms on the support calculated fr
 - 9 types of supports 
 - 11 types of metals: Ag, Au, Co, Cu, Fe, Ir, Ni, Pd, Pt, Rh, Ru
 - 99 sample points
+
 ![metal_support](images/metal_support.png)
 
 ## Machine Learning Methods Used:
