@@ -1,23 +1,36 @@
-# Introduction to kinetic Monte Carlo (kMC) Simulations with Examples in Jupyter Notebooks
-The notebooks contain the basic concepts of kinetic Monte Carlo simluations and its applications in both well-mixed and lattice systems taken from the literature.
-
-For lattice kMC, the software named [zacros](http://zacros.org/) is used. Its Python Wrapper can be downloaded or cloned from [Zacros-Wrapper GitHub repository](https://github.com/VlachosGroup/Zacros-Wrapper).
+# Training Scaling Relationships for Single-atom Catalysts
+The notebooks contain the workflow of training scaling relationships based on physical descriptors (features obtained from density functional theory calculations) using various machine learning methods.
+The scaling relationships are useful for fast prediction of desired properties and catalyst material screening, saving computing time by not doing quantumn calculations. 
 
 ## Developers
 - Yifan Wang (wangyf@udel.edu)
 
-## Chapters 
+## Scaling Relationships are developed for 
+- Ebind, the binding energy of single-metal atom on a support
+- Ea, the activation barrier for metal atom diffusion 
 
-### Well-mixed kMC:
+## Related Publication 
+Su, Y.; Zhang, L.; __Wang, Y.__; Liu, J.; Muravev, V.; Alexopoulos, K.; Filot, A. W.; Vlachos, D. G.; Hensen, E. J. M. Stability of Heterogeneous Single-Atom Catalysts : A Scaling Law Mapping Thermodynamics to Kinetics (2019).(Submitted)
 
-1. Intro to kMC with a Michaelis-Menten Example
+## Machine Learning Methods Used:
+- LASSO regression
+- Ridge regression
+- Elastic net
+- Ordinary Least Square (OLS) regression
+- Genetic Programming (GP) based on sybomlic regression
 
-2. Samlping and Computing Average with a Gene Expression Mechanism
+# Getting Started 
+- Train_Ea: the training for Ea
+- Train_Ebind: the training for Ebind
+- GP: files for training genetic programming models
 
-3. Modeling Oscilliations with an Auto Catalysis Mechanism
+## Dependencies 
+- [Numpy](https://numpy.org/): Used for vector and matrix operations
+- [Matplotlib](https://matplotlib.org/): Used for plotting
+- [Scipy](https://www.scipy.org/): Used for linear algebra calculations
+- [Pandas](https://pandas.pydata.org/): Used to import data from Excel files
+- [Sklearn](https://scikit-learn.org/stable/): Used for training machine learning models
+- [Seaborn](https://seaborn.pydata.org/): Used for plotting
+- [Gplearn](https://gplearn.readthedocs.io/en/stable/): Used for training genetic programming models 
 
-### Lattice kMC:
 
-4. CO Oxidation Example on Pd(111) by Zacros and Zacros Wrapper
-
-Click [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/VlachosGroup/Intro-to-KMC/master) to play with the interactive notebooks on your browser
