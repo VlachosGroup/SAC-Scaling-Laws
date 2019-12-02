@@ -4,3 +4,4 @@ scipy==1.2.*
 pandas==0.24.*
 sklearn==1.16.*
 seaborn==0.9.*
+gplearn==0.4.1
