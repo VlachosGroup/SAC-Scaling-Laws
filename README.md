@@ -1,8 +1,7 @@
 # Training Scaling Laws for Single-atom Catalysts
-The notebooks contain the workflow of training scaling laws based on physical descriptors (features obtained from density functional theory calculations) using various machine learning methods.
+This repository contains the workflow of training scaling laws based on physical descriptors (features obtained from density functional theory calculations) using various machine learning methods.
 
-The scaling laws are useful for fast prediction of desired properties and catalyst material screening, saving computing time by not doing quantumn calculations.
-
+The scaling laws are useful surrogate models for fast prediction of desired properties and catalyst material screening, saving computing time by not doing quantumn calculations.
 
 ![toc](images/table_of_content.png)
 
@@ -13,7 +12,7 @@ The scaling laws are useful for fast prediction of desired properties and cataly
 - Ebind, the binding energy of single-metal atom on a support
 - Ea, the activation barrier for metal atom diffusion
 
-Ebind and Ea represents the thermodynamic and kinetic stability of single metal atom catalysts, respectively.
+Ebind and Ea represents the __thermodynamic__ and __kinetic__ stability of single metal atom catalysts, respectively.
 
 ## Dataset
 The dataset includes properties of the single-atoms on the support calculated from density functional theory (DFT) in Ea_data.csv
@@ -31,9 +30,10 @@ The dataset includes properties of the single-atoms on the support calculated fr
 - Genetic Programming (GP) based on sybomlic regression
 
 ## Getting Started
-- Train_Ea: the training for Ea
-- Train_Ebind: the training for Ebind
 - gp_models: files for training genetic programming models
+- ml_models: files for training statistical-learning models
+    - ![train_Ea: the training for Ea](ml_models/train_Ea.ipynb)
+    - ![train_Ea: the training for Ebind](ml_models/train_Ebind.ipynb)
 
 ## Dependencies
 - [Numpy](https://numpy.org/): Used for vector and matrix operations
