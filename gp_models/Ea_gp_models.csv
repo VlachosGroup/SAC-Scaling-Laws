@@ -1,0 +1,8 @@
+﻿X0,Ec,,,,,,
+X1,Ebind,,,,,,
+Model ,MAE (eV),Testing RMSE (eV),r2,pearson r,S-expression,Model Expression,
+a,0.246,0.292,0.925,0.970,"div(mul(X1, X1), div(X0, 0.553))",Ea = 0.553*Ebind^2/Ec,
+b,0.205,0.282,0.940,0.975,"mul(sub(X1, sqrt(X1)), div(X1, X0))",Ea = Ebind^2/Ec - Ebind^1.5/Ec,
+c,0.242,0.281,0.927,0.970,"div(mul(X1, X1), div(X0, 0.565))",Ea = 0.565*Ebind^2/Ec ,
+d,0.239,0.274,0.928,0.970,"div(mul(X1, X1), div(X0, 0.575))",Ea = 0.575*Ebind^2/Ec,
+e,0.241,0.277,0.928,0.970,"mul(X1, div(X1, div(X0, 0.570)))",Ea = 0.570*Ebind^2/Ec,
