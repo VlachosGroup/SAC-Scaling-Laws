@@ -33,7 +33,7 @@ The dataset includes properties of the single-atoms on the support calculated fr
 - gp_models: files for training genetic programming models
 - ml_models: files for training statistical-learning models
     - [train_Ea: the training for Ea](ml_models/train_Ea.ipynb)
-    - [train_Ea: the training for Ebind](ml_models/train_Ebind.ipynb)
+    - [train_Ebind: the training for Ebind](ml_models/train_Ebind.ipynb)
 
 ## Dependencies
 - [Numpy](https://numpy.org/): Used for vector and matrix operations
