@@ -788,7 +788,8 @@ coef_unnormalized = {'Descriptors': x_features_poly_combined,
                      'LASSO': np.around(lasso_coefs_unnormalized, decimals = decimal_places), 
                      'Enet': np.around(enet_min_coefs_unnormalized, decimals = decimal_places), 
                      'Ridge': np.around(ridge_coefs_unnormalized, decimals = decimal_places),
-                     'GP': np.around(GP_coefs_unnormalized, decimals =decimal_places)}
+                     'GP': np.around(GP_coefs_unnormalized, decimals =decimal_places),
+                     'OLS': np.around(OLS_coefs_unnormalized, decimals =decimal_places)}
 
 
 coef_unnormalized_df = pd.DataFrame(coef_unnormalized)
@@ -801,7 +802,8 @@ coef = {'Descriptors': x_features_poly_combined,
         'LASSO': np.around(lasso_coefs, decimals = decimal_places), 
         'Enet': np.around(enet_min_coefs, decimals = decimal_places), 
         'Ridge': np.around(ridge_coefs, decimals = decimal_places),
-        'GP': np.around(GP_coefs, decimals =decimal_places)}
+        'GP': np.around(GP_coefs, decimals =decimal_places),
+        'OLS': np.around(OLS_coefs, decimals =decimal_places)}
 
 
 coef_df = pd.DataFrame(coef)
