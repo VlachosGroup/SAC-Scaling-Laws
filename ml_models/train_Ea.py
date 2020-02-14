@@ -782,7 +782,7 @@ fig.savefig(os.path.join(output_dir, model_name + '_parity_metal.png'))
 # %%
 #%% Export coefficients into dataframes
 # Unnormalized Coefficients
-decimal_places = 5
+decimal_places = 2
 coef_unnormalized = {'Descriptors': x_features_poly_combined,
                      'DSL': np.around(DSL_coefs_unnormalized, decimals = decimal_places),
                      'LASSO': np.around(lasso_coefs_unnormalized, decimals = decimal_places), 
