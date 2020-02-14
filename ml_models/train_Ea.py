@@ -1,3 +1,5 @@
+# To add a new cell, type '# %%'
+# To add a new markdown cell, type '# %% [markdown]'
 # %% [markdown]
 # ## Training the Single Atom Diffusion Scaling Law in Python
 # 
@@ -321,9 +323,9 @@ x_feature_nonzero = [x_features_poly[pi] for pi in J_index]
 '''
 Convert the coefficient to unnormalized form
 '''
-lasso_coefs_unnormailized = np.zeros_like(lasso_coefs)
-lasso_coefs_unnormailized[1:] = lasso_coefs[1:]/sv
-lasso_coefs_unnormailized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
+lasso_coefs_unnormalized = np.zeros_like(lasso_coefs)
+lasso_coefs_unnormalized[1:] = lasso_coefs[1:]/sv
+lasso_coefs_unnormalized[0] = lasso_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 # Plot coefficients matrix
 lasso_coef_matrix = rtools.make_coef_matrix(x_feature_nonzero, J_nonzero, n_features, x_secondary_feature_names)
@@ -368,9 +370,9 @@ ridge_RMSE, ridge_r2 = rtools.parity_plot(y, ridgeCV.predict(X), model_name, out
 '''
 Convert the coefficient to unnormalized form
 '''
-ridge_coefs_unnormailized = np.zeros_like(ridge_coefs)
-ridge_coefs_unnormailized[1:] = ridge_coefs[1:]/sv
-ridge_coefs_unnormailized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
+ridge_coefs_unnormalized = np.zeros_like(ridge_coefs)
+ridge_coefs_unnormalized[1:] = ridge_coefs[1:]/sv
+ridge_coefs_unnormalized[0] = ridge_coefs[0] - np.sum(mv/sv*lasso_coefs[1:])
 
 # Plot coefficients matrix
 ridge_coef_matrix = rtools.make_coef_matrix(x_features_poly, ridge_coefs, n_features, x_secondary_feature_names)
@@ -514,10 +516,10 @@ enet_min_prediction = enet_min.predict(X)
 '''
 Convert the coefficient to unnormalized form
 '''
-enet_min_coefs_unnormailized = np.zeros_like(enet_min_coefs)
+enet_min_coefs_unnormalized = np.zeros_like(enet_min_coefs)
 
-enet_min_coefs_unnormailized[1:] = enet_min_coefs[1:]/sv
-enet_min_coefs_unnormailized[0] = enet_min_coefs[0] - np.sum(mv/sv*enet_min_coefs[1:])
+enet_min_coefs_unnormalized[1:] = enet_min_coefs[1:]/sv
+enet_min_coefs_unnormalized[0] = enet_min_coefs[0] - np.sum(mv/sv*enet_min_coefs[1:])
 
 # %% [markdown]
 # #### Ordinary least square (OLS) regression<a name="OLS"></a>
@@ -552,9 +554,9 @@ OLS_prediction = OLS.predict(X)
 '''
 Convert the coefficient to unnormalized form
 '''
-OLS_coefs_unnormailized = np.zeros_like(OLS_coefs)
-OLS_coefs_unnormailized[1:] = OLS_coefs[1:]/sv
-OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
+OLS_coefs_unnormalized = np.zeros_like(OLS_coefs)
+OLS_coefs_unnormalized[1:] = OLS_coefs[1:]/sv
+OLS_coefs_unnormalized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 
 # %% [markdown]
 # #### Genetic Programming based on symbolic regression <a name="GP"></a>
@@ -566,15 +568,18 @@ OLS_coefs_unnormailized[0] = OLS_coefs[0] - np.sum(mv/sv*OLS_coefs[1:])
 # %%
 #%% Genetic programming model
 
+
 model_name = 'GP'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)    
 
-# GP model is already trained and its functional form is as follow:
-GP_coefs_unnormalized = 0.565
-GP_predict = lambda x: x * GP_coefs_unnormalized 
-
 term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][0]
+# GP model is already trained and its functional form is as follow:
+GP_coef_unnormalized = 0.565
+GP_coefs_unnormalized = np.zeros_like(ridge_coefs)
+GP_coefs_unnormalized[term_index] = GP_coef_unnormalized
+GP_predict = lambda x: x * GP_coef_unnormalized
+
 X_GP_test = X_before_test[:,[term_index]]
 X_GP_train = X_before_train[:,[term_index]]
 X_GP = X_before_scaling[:, [term_index]]
@@ -591,6 +596,11 @@ GP_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 # Plot the parity plot
 GP_RMSE, GP_r2 =rtools.parity_plot(y, GP_predict(X_GP), model_name, output_dir, GP_RMSE_test)
 GP_prediction =  GP_predict(X_GP)
+
+# the normalized coefficients
+GP_coefs = np.zeros_like(GP_coefs_unnormalized)
+GP_coefs[1:] = GP_coefs_unnormalized[1:]*sv
+GP_coefs[0] = GP_coefs_unnormalized[0] + np.sum(mv/sv*GP_coefs_unnormalized[1:])
 
 # %% [markdown]
 # #### Univerisal Diffusion Scaling relation (DSL) <a name="DSL"></a>
@@ -624,11 +634,11 @@ DSL_RMSE_train = np.sqrt(mean_squared_error(y_train, y_predict_train))
 DSL_RMSE, DSL_r2 =rtools.parity_plot(y, DSL.predict(X_DSL), model_name, output_dir, DSL_RMSE_test)
 
 # the unnormalized coefficients
-DSL_coefs_unnormailized = np.zeros_like(DSL_coefs)
-DSL_coefs_unnormailized[1:] = DSL_coefs[1:]/sv
-DSL_coefs_unnormailized[0] = DSL_coefs[0] - np.sum(mv/sv*DSL_coefs[1:])
-u0= DSL_coefs_unnormailized[0] #intercept
-u1 = DSL_coefs_unnormailized[term_index] # the coefficient
+DSL_coefs_unnormalized = np.zeros_like(DSL_coefs)
+DSL_coefs_unnormalized[1:] = DSL_coefs[1:]/sv
+DSL_coefs_unnormalized[0] = DSL_coefs[0] - np.sum(mv/sv*DSL_coefs[1:])
+u0= DSL_coefs_unnormalized[0] #intercept
+u1 = DSL_coefs_unnormalized[term_index] # the coefficient
 DSL_prediction = DSL.predict(X_DSL)
 
 # %% [markdown]
@@ -765,4 +775,41 @@ ax.set_ylabel(r'$\rm E_a$' +'(eV)')
 plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
 
 fig.savefig(os.path.join(output_dir, model_name + '_parity_metal.png'))
+
+# %% [markdown]
+# ## Export coefficients into dataframes
+
+# %%
+#%% Export coefficients into dataframes
+# Unnormalized Coefficients
+decimal_places = 5
+coef_unnormalized = {'Descriptors': x_features_poly_combined,
+                     'DSL': np.around(DSL_coefs_unnormalized, decimals = decimal_places),
+                     'LASSO': np.around(lasso_coefs_unnormalized, decimals = decimal_places), 
+                     'Enet': np.around(enet_min_coefs_unnormalized, decimals = decimal_places), 
+                     'Ridge': np.around(ridge_coefs_unnormalized, decimals = decimal_places),
+                     'GP': np.around(GP_coefs_unnormalized, decimals =decimal_places)}
+
+
+coef_unnormalized_df = pd.DataFrame(coef_unnormalized)
+# Save to a csv file
+coef_unnormalized_df.to_csv('coefficient_unnormalized.csv')
+
+# Normalized Coefficients
+coef = {'Descriptors': x_features_poly_combined,
+        'DSL': np.around(DSL_coefs, decimals = decimal_places),
+        'LASSO': np.around(lasso_coefs, decimals = decimal_places), 
+        'Enet': np.around(enet_min_coefs, decimals = decimal_places), 
+        'Ridge': np.around(ridge_coefs, decimals = decimal_places),
+        'GP': np.around(GP_coefs, decimals =decimal_places)}
+
+
+coef_df = pd.DataFrame(coef)
+# Save to a csv file
+coef_df.to_csv('coefficient_normalized.csv')
+                    
+
+
+# %%
+
 
