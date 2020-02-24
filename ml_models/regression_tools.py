@@ -243,7 +243,7 @@ def parity_plot(yobj, ypred, model_name,  output_dir, test_RMSE):
     
     ax.set_xlabel('DFT-Calculated ')
     ax.set_ylabel('Model Prediction')
-    plt.title(r'RMSE-{:.2}, $r^2$ -{:.2}'.format(test_RMSE, r2))
+    plt.title(r'RMSE={:.2}, $r^2$ ={:.2}'.format(test_RMSE, r2))
     plt.legend(bbox_to_anchor = (1.02, 1),loc= 'upper left', frameon=False)
     plt.tight_layout()
     fig.savefig(os.path.join(output_dir, model_name + '_parity.png'))

@@ -613,7 +613,7 @@ model_name = 'DSL'
 output_dir = os.path.join(base_dir, model_name)
 if not os.path.exists(output_dir): os.makedirs(output_dir)
     
-term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-1Ebind_2')[0][0]
+term_index = np.where(np.array(x_features_poly_combined) ==  'Ec_-2Ebind_2')[0][0]
 DSL = linear_model.LinearRegression(fit_intercept=fit_int_flag)
 X_DSL_test = X_test[:,[0,term_index]]
 X_DSL_train = X_train[:,[0,term_index]]
