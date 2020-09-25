@@ -1,7 +1,7 @@
 # Training Scaling Laws for Single-atom Catalysts
 This repository contains the workflow of training scaling laws based on physical descriptors (features obtained from density functional theory calculations) using various machine learning methods.
 
-The scaling laws are useful surrogate models for fast prediction of desired properties and catalyst material screening, saving computing time by not doing quantumn calculations.
+The scaling laws are useful surrogate models for fast prediction of desired properties and catalyst material screening, saving computing time by doing fewer quantumn calculations.
 
 ![toc](images/table_of_content.png)
 
